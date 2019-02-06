@@ -1,7 +1,7 @@
 /******************************************************************************
  * Author: Laura Lund, lundl@oregonstate.edu
  * Assignment: CS 362 Winter 2019, Assignment 3
- * Description: This is a unit test for the shuffle() function in dominion.c.
+ * Description: This is a unit test for the card smithy in dominion.c.
  * ***************************************************************************/
 #include "dominion.h"
 #include "dominion_helpers.h" 
@@ -55,57 +55,15 @@ int assertTrue(int actualVal, int expectedVal, int actualReturn, int expectedRet
 }
 
 /******************************************************************************
- * Name: checkDeckDifferences()
- * Parameters: a gameState struct pointer to a struct holding the result of
- * 	a call to shuffle() and a gameState struct pointer to a struct holding
- * 	the original order of the deck.
- * Description: This helper function compares values of two decks to check
- * 	whether the cards in each appear in the same order within each deck.
- * Return Value: If the decks' cards do not appear in the same order within
- * 	each deck, return 1. Otherwise, return 0.
- * ***************************************************************************/
-int checkDeckDifferences(struct gameState* test, struct gameState* copy)
-{
-    int i;
-    int numDiff = 0;
-    // compare the struct we passed to the struct we copied earlier
-    for (i = 0; i < test->deckCount[0]; i++)
-    {
-        // If the cards in this position do not match
-	if(test->deck[0][i] != copy->deck[0][i])
-	{
-	    // Increment count of differences
-	    numDiff += 1;
-
-	    // We don't need to look anymore. 
-	    break;
-        }  
-    }
-    if(numDiff > 0)
-    {
-        // These two decks are different; difference == true
-        return 1;
-    }
-
-    // These two decks are the same; difference == false
-    return 0;
-}
-
-/******************************************************************************
- * Name: testShuffle()
+ * Name: testSmithy()
  * Parameters: none
- * Description: This unit test proves that after calling shuffle() the deck is
- * 	in a different order than its original order. Each test case within 
- *	this unit test stores a deck within a gameState struct*, copies that
- *	struct into another gameState struct*, and compares the order of the
- *	shuffled deck to the order of the deck in the copy. The one exception
- *	to this is the test case that tests a call to shuffle() when the
- *	deck is empty (deckCount of 0). In this case there is no comparision
- *	between two decks.
+ * Description: This unit test proves that after calling cardEffect() with 
+ * 	smithy as the card parameter, the smithy effect causes 3 cards to be
+ * 	drawn and one card to be discarded.
  * Return Value: none
  * ***************************************************************************/
 
-void testShuffle()
+void testSmithy()
 {
     // Initialize a gameState struct with values we need for this test
     struct gameState* testGame = newGame();
@@ -114,7 +72,16 @@ void testShuffle()
 
     // This gameStruct pointer is used for copies
     struct gameState* testCopy = newGame();
-  
+ 
+    // Set up deck for player 0
+    // Set up hand for player 0
+    // Set up deck for player 1
+    // Set up hand for player 1
+    // set this player in whoseTurn
+    // set card = smithy
+    // set hand position (what is this?)
+
+ 
     //set up random number generator
     int randomSeed = time(NULL) % 86400;
     SelectStream(1);
