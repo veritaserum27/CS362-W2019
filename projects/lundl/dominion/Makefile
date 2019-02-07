@@ -38,6 +38,9 @@ cardtest2: dominion.o rngs.o cardtest2.c
 cardtest3: dominion.o rngs.o cardtest3.c
 	gcc -o cardtest3 cardtest3.c dominion.o rngs.o $(CFLAGS)
 
+cardtest4: dominion.o rngs.o cardtest4.c
+	gcc -o cardtest4 cardtest4.c dominion.o rngs.o $(CFLAGS)
+
 unittest1: dominion.o rngs.o unittest1.c
 	gcc -o unittest1 unittest1.c dominion.o rngs.o $(CFLAGS)
 
