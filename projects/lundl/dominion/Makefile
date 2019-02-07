@@ -44,11 +44,12 @@ unittest3: dominion.o rngs.o unittest3.c
 unittest4: dominion.o rngs.o unittest4.c
 	gcc -o unittest4 unittest4.c dominion.o rngs.o $(CFLAGS)
 
-unittestresults: unittest1 unittest2 unittest3 unittest4
+unittestresults: unittest1 unittest2 unittest3 unittest4 cardtest1
 	./unittest1 &> unittestresults.out
 	./unittest2 >> unittestresults.out
 	./unittest3 >> unittestresults.out
 	./unittest4 >> unittestresults.out
+	./cardtest1 >> unittestresults.out
 	gcov -b dominion.c >> unittestresults.out
 	cat dominion.c.gcov >> unittestresults.out
 

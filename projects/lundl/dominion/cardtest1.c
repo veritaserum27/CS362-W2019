@@ -55,11 +55,66 @@ int assertTrue(int actualVal, int expectedVal, int actualReturn, int expectedRet
 }
 
 /******************************************************************************
+ * Name: checkHandDifferences()
+ * Parameters: a gameState struct pointer to a struct holding the result of
+ * 	a call to cardEffect(smithy) and a gameState struct pointer to a struct
+ * 	holding the original hand.
+ * Description: This helper function compares values of two hand to check
+ * 	whether the altered hand has the expected changes (smithy replaced by
+ * 	a new card, two new cards inserted at the next available indices).
+ * Return Value: If the altered hand holds new values at the expected indices, 
+ * 	return 1. Otherwise, return 0.
+ * ***************************************************************************/
+int checkHandDifferences(struct gameState* test, struct gameState* copy, int handPos, int handCountBefore, int handCount, int expectedDiff)
+{
+ 
+    int i;
+    int numDiff = 0;
+
+    // handPos must now hold a non-smithy value
+    if (test->hand[0][handPos] != smithy)
+    {
+        // if smithy was originally at handPos
+        if (copy->hand[0][handPos] == smithy)
+        {
+	     //printf("test->hand[0][handPos]: %i, copy->hand[0][handPos]: %i, handPos: %i\n", test->hand[0][handPos], copy->hand[0][handPos], handPos);
+
+            // increment difference count 
+	    numDiff += 1;
+        }
+        // There must be the expected number of differences
+        // compare the struct we passed to the struct we copied earlier
+        for (i = handCountBefore; i < handCount; i++)
+        {
+            //printf("test->hand[0][i]: %i, copy->hand[0][i]: %i, i: %i\n", test->hand[0][i], copy->hand[0][i], i);
+	    // If the cards in this position do not match
+	    if(test->hand[0][i] != copy->hand[0][i])
+	    {
+               // Increment count of differences
+	       numDiff += 1;
+            }  
+        }
+    }
+    
+
+    //printf("numDiff: %i\n", numDiff);
+    if(numDiff == expectedDiff)
+    {
+        // These two hands are different at 3 indices; difference == true
+        return 1;
+    }
+
+    // These two hands are not sufficiently different; difference == false
+    return 0;
+}
+
+
+/******************************************************************************
  * Name: testSmithy()
  * Parameters: none
- * Description: This unit test proves that after calling cardEffect() with 
+ * Description: This unit test checks whether calling cardEffect() with 
  * 	smithy as the card parameter, the smithy effect causes 3 cards to be
- * 	drawn and one card to be discarded.
+ * 	drawn into the player's hand and the smithy card to be discarded.
  * Return Value: none
  * ***************************************************************************/
 
@@ -72,107 +127,588 @@ void testSmithy()
     // set player 0 in whoseTurn
     testGame->whoseTurn = 0;
 
-    // initialize deck and hand counts
+    // initialize deck and card counts
     testGame->deckCount[0] = 0;
     testGame->handCount[0] = 0;
+    testGame->discardCount[0] = 0;
+    testGame->playedCardCount = 0; 
 
     // This gameStruct pointer is used for copies
-   // struct gameState* testCopy = newGame();
+    struct gameState* testCopy = newGame();
  
     // Set up deck for player 0
-
-    // Deck holds all different values except smithy
     int i;
-    for(i=curse; i <= treasure_map ; i++)
+    // Deck holds card values < smithy
+    for(i=curse; i <= remodel ; i++)
     {
-	if (i != smithy)
-	{
-	    testGame->deck[0][i] = i;
-	    testGame->deckCount[0] += 1;
-	}
+        testGame->deck[0][i] = i;
+        testGame->deckCount[0] += 1;
+    }
+ 
+    // Discard pile has valid cards
+    for(i = curse; i < remodel; i++)
+    {
+	testGame->discard[0][i] = i; 
     }
 
 
-    /* Test Case 1: smithy in position 4 */
+    // Played card pile has valid cards
+    for(i = curse; i < remodel; i++)
+    {
+	testGame->playedCards[i] = i;
+    }
+
+    /* Test Case 1: 5 cards in hand, smithy in position 4 */
     // Set up hand for player 0
     printf("smithy Test Case 1\n"); 
-    for(i = 0; i < 4; i++)
+    int j = 0;
+    while(j < 5)
     {
-	// draw card from deck
-	drawCard(testGame->whoseTurn, testGame);	
+	// get cards from second half of card values
+	for(i = village; i <= treasure_map; i++)
+        {
+	    testGame->hand[0][j] = i;
+            testGame->handCount[0]++;   
+            j++;
+            
+            if(j >= 5)
+            {
+		break;
+	    }
+        }
     }
+
 
     // put smithy in position 4
     testGame->hand[0][4] = smithy;
     testGame->handCount[0]++;
     int handPos = 4;
 
-    // Set up deck for player 1
-    // Set up hand for player 1
     // set card = smithy
     int card = smithy;
 
-  /*  printf("current hand:\n");
-    for(i=0; i < testGame->handCount[0]; i++)
-    {
-	printf("Hand at position %i is %i\n", i, testGame->hand[0][i]);
-    }
-   */
     // Save current hand count
     int handCountBefore = testGame->handCount[0];
-    //printf("handCount: %i\n", handCount);
+
+    // Save a copy of this test struct
+    memcpy(testCopy->hand[0], testGame->hand[0], sizeof(testGame->hand[0]));
+    testCopy->handCount[0] = testGame->handCount[0];
 
     // call cardEffect
     int returnVal = cardEffect(card, 0, 0, 0, testGame, handPos, 0);
     
-    // Assert that handCount is 3 - 1 more than current handCount and that resultVal is 0
+    // Assert that handCount is 3 - 1 more than current handCount and that returnVal is 0
     // Check the restults of this test case
     char* testCase1 = "smithy effect with hand count of 5 and smithy position of 4";
 
-    // Assert that the handcount is 3 - 1 more than current hand count and that cardEffect returnval is 0
-    if(assertTrue(testGame->handCount[0], handCountBefore + 3 - 1, returnVal, 0))
+    int assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore + 3 - 1, returnVal, 0);
+
+    // Get the result of comparing the hands
+    int comparisonResult = checkHandDifferences(testGame, testCopy, handPos, handCountBefore, testGame->handCount[0], 3);
+
+    // Assert that both halves of the test pass
+    if(assertTrue(assertHandCountReturnVal, 1, comparisonResult, 1))
     {
 	printResults(testCase1, 1);
     }
     else
     {
-	printf("actual handcount: %i, expected handcount: %i\n", testGame->handCount[0], handCountBefore + 3 - 1);
 	printResults(testCase1, 0);
     }
 
 
-    // set hand position for smithy so that it can be discarded successfully
-    // have other cards in hand along with smithy
-    // test smithy in different hand positions
-    // check number of cards before and after playing smithy
-    // test playing one smithy while also having other smithy cards in the hand
+    /* Test Case 2: smithy as only card in hand */
+    printf("\nsmithy Test Case 2\n"); 
+    
+    // reset deck and hand counts
+    testGame->deckCount[0] = 0;
+    testGame->handCount[0] = 0;
+    testGame->discardCount[0] = 0;
+    testGame->playedCardCount = 0; 
+
+
+    // Reset deck for player 0
+
+    // Deck holds card values < smithy
+    for(i=curse; i <= remodel ; i++)
+    {
+        testGame->deck[0][i] = i;
+        testGame->deckCount[0] += 1;
+    }
+ 
+    // Discard pile has valid cards
+    for(i = curse; i < remodel; i++)
+    {
+	testGame->discard[0][i] = i; 
+    }
+
+
+    // Played card pile has valid cards
+    for(i = curse; i < remodel; i++)
+    {
+	testGame->playedCards[i] = i;
+    }
+
+
+    // Set up hand for player 0
+    // put smithy in position 0
+    testGame->hand[0][0] = smithy;
+    testGame->handCount[0]++;
+    handPos = 0;
+
+    // Save current hand count
+    handCountBefore = testGame->handCount[0];
+
+    // Save a copy of this test struct
+    memcpy(testCopy->hand[0], testGame->hand[0], sizeof(testGame->hand[0]));
+    testCopy->handCount[0] = testGame->handCount[0];
+
+    // call cardEffect
+    returnVal = cardEffect(card, 0, 0, 0, testGame, handPos, 0);
+    
+    // Assert that handCount is 3 - 1 more than current handCount and that returnVal is 0
+    // Check the restults of this test case
+    char* testCase2 = "smithy effect with hand count of 1 and smithy position of 0";
 
  
-    //set up random number generator
- //   int randomSeed = time(NULL) % 86400;
- //   SelectStream(1);
- //   PutSeed((long)randomSeed);
-  
+    assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore + 3 - 1, returnVal, 0);
 
-      // Save a copy of this test struct
-  //  memcpy(testCopy->deck[0], testGame->deck[0], sizeof(testGame->deck[0]));
- //   testCopy->deckCount[0] = testGame->deckCount[0];
+    // Get the result of comparing the hands
+    comparisonResult = checkHandDifferences(testGame, testCopy, handPos, handCountBefore, testGame->handCount[0], 3);
 
-    // Pass this gameState struct along with a valid player num to shuffle()
- //   int returnVal = shuffle(0, testGame);
+    // Assert that both halves of the test pass
+    if(assertTrue(assertHandCountReturnVal, 1, comparisonResult, 1))
+    {
+	printResults(testCase2, 1);
+    }
+    else
+    {
+	printResults(testCase2, 0);
+    }
 
+
+    /* Test Case 3: smithy as card parameter, but no cards in hand (invalid ints stored in hand), smithy at position 0 */
+    printf("\nsmithy Test Case 3\n"); 
+    
+    // reset deck and hand counts
+    testGame->deckCount[0] = 0;
+    testGame->handCount[0] = 0;
+    testGame->discardCount[0] = 0;
+    testGame->playedCardCount = 0; 
+
+
+    // Reset deck for player 0
+
+    // Deck holds card values < smithy
+    for(i=curse; i <= remodel ; i++)
+    {
+        testGame->deck[0][i] = i;
+        testGame->deckCount[0] += 1;
+    }
+ 
+    // Discard pile has valid cards
+    for(i = curse; i < remodel; i++)
+    {
+	testGame->discard[0][i] = i; 
+    }
+
+
+    // Played card pile has valid cards
+    for(i = curse; i < remodel; i++)
+    {
+	testGame->playedCards[i] = i;
+    }
+
+    // Set up hand for player 0
+    // all invalid cards
+    for(i = 0; i < 5; i++)
+    {
+	testGame->hand[0][i] = -1;
+    }
+
+    // set smithy position as 0
+    handPos = 0;
+
+    // Save current hand count
+    handCountBefore = testGame->handCount[0];
+   
+    // Save a copy of this test struct
+    memcpy(testCopy->hand[0], testGame->hand[0], sizeof(testGame->hand[0]));
+    testCopy->handCount[0] = testGame->handCount[0];
+
+    // call cardEffect
+    returnVal = cardEffect(card, 0, 0, 0, testGame, handPos, 0);
+    
+    // Assert that handCount is 3 - 1 more than current handCount and that returnVal is 0
     // Check the restults of this test case
-//    char* testCase1 = "shuffling deck of 3 estate and 7 copper";
+    char* testCase3 = "smithy effect with hand count of 0 and smithy position of 0";
+ 
+    assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore + 3 - 1, returnVal, 0);
 
-    // Assert that the two decks differ and that shuffle returnval is 0
-//    if(assertTrue(checkDeckDifferences(testGame, testCopy), 1, returnVal, 0))
-//    {
-//	printResults(testCase1, 1);
-//    }
-//    else
-//    {
-//	printResults(testCase1, 0);
-//    }
+    // Get the result of comparing the hands
+    comparisonResult = checkHandDifferences(testGame, testCopy, handPos, handCountBefore, testGame->handCount[0], 2);
+
+    // Assert that both halves of the test pass
+    if(assertTrue(assertHandCountReturnVal, 1, comparisonResult, 1))
+    {
+	printResults(testCase3, 1);
+    }
+    else
+    {
+	printResults(testCase3, 0);
+    }
+
+
+    /* Test Case 4: smithy as card parameter, but no cards in hand, invalid index for hand pos */
+    printf("\nsmithy Test Case 4\n"); 
+    
+    // reset deck and hand counts
+    testGame->deckCount[0] = 0;
+    testGame->handCount[0] = 0;
+    testGame->discardCount[0] = 0;
+    testGame->playedCardCount = 0; 
+
+
+    // Reset deck for player 0
+
+    // Deck holds card values < smithy
+    for(i=curse; i <= remodel ; i++)
+    {
+        testGame->deck[0][i] = i;
+        testGame->deckCount[0] += 1;
+    }
+ 
+    // Discard pile has valid cards
+    for(i = curse; i < remodel; i++)
+    {
+	testGame->discard[0][i] = i; 
+    }
+
+
+    // Played card pile has valid cards
+    for(i = curse; i < remodel; i++)
+    {
+	testGame->playedCards[i] = i;
+    }
+
+    // Set up hand for player 0
+    // all invalid cards
+    for(i = 0; i < 5; i++)
+    {
+	testGame->hand[0][i] = -1;
+    }
+
+    // put smithy in position -1
+    handPos = -1;
+
+    // Save current hand count
+    handCountBefore = testGame->handCount[0];
+
+    // call cardEffect
+    returnVal = cardEffect(card, 0, 0, 0, testGame, handPos, 0);
+    
+    // Assert that handCount is 3 - 1 more than current handCount and that returnVal is 0
+    // Check the restults of this test case
+    char* testCase4 = "smithy effect with hand count of 0 and smithy position of -1";
+
+ 
+    assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore + 3 - 1, returnVal, 0);
+
+    // Get the result of comparing the hands
+    comparisonResult = checkHandDifferences(testGame, testCopy, handPos, handCountBefore, testGame->handCount[0], 2);
+
+    // Assert that both halves of the test pass
+    if(assertTrue(assertHandCountReturnVal, 1, comparisonResult, 1))
+    {
+	printResults(testCase4, 1);
+    }
+    else
+    {
+	printResults(testCase4, 0);
+    }
+
+    /* Test Case 5: smithy as card parameter, max number of cards in hand, smithy in position MAX_HAND-1 */
+    printf("\nsmithy Test Case 5\n"); 
+    
+    // reset deck and hand counts
+    testGame->deckCount[0] = 0;
+    testGame->handCount[0] = 0;
+    testGame->discardCount[0] = 0;
+    testGame->playedCardCount = 0; 
+
+
+    // Reset deck for player 0
+
+    // Deck holds card values < smithy
+    for(i=curse; i <= remodel ; i++)
+    {
+        testGame->deck[0][i] = i;
+        testGame->deckCount[0] += 1;
+    }
+ 
+    // Discard pile has valid cards
+    for(i = curse; i < remodel; i++)
+    {
+	testGame->discard[0][i] = i; 
+    }
+
+
+    // Played card pile has valid cards
+    for(i = curse; i < remodel; i++)
+    {
+	testGame->playedCards[i] = i;
+    }
+
+    // Set up hand for player 0
+    j = 0;
+    while(j < MAX_HAND - 1)
+    {
+	// get cards from second half of card values
+	for(i = village; i <= treasure_map; i++)
+        {
+	    testGame->hand[0][j] = i;
+            testGame->handCount[0]++;   
+	    j++;
+            
+            if(j >= MAX_HAND - 1)
+            {
+		break;
+	    }
+        }
+    }
+
+   // put smithy in position MAX_HAND-1
+    testGame->hand[0][MAX_HAND - 1] = smithy;
+   
+    testGame->handCount[0]++;
+    handPos = MAX_HAND-1;
+
+    // Save current hand count
+    handCountBefore = testGame->handCount[0];
+    
+    // Save a copy of this test struct
+    memcpy(testCopy->hand[0], testGame->hand[0], sizeof(testGame->hand[0]));
+    testCopy->handCount[0] = testGame->handCount[0];
+
+
+    // call cardEffect
+    returnVal = cardEffect(card, 0, 0, 0, testGame, handPos, 0);
+    
+    // Assert that handCount is MAX_HAND and that returnVal is 0
+    // Check the restults of this test case
+    char* testCase5 = "smithy effect with hand count of MAX_HAND and smithy position of MAX_HAND-1";
+ 
+    assertHandCountReturnVal = assertTrue(testGame->handCount[0], MAX_HAND, returnVal, 0);
+
+    // Get the result of comparing the hands--there should be only 1 card different (the replacement of smithy)
+    comparisonResult = checkHandDifferences(testGame, testCopy, handPos, handCountBefore, testGame->handCount[0], 1);
+
+    // Assert that both halves of the test pass
+    if(assertTrue(assertHandCountReturnVal, 1, comparisonResult, 1))
+    {
+	printResults(testCase5, 1);
+    }
+    else
+    {
+	printResults(testCase5, 0);
+    }
+
+
+    /* Test Case 6: 12 cards in hand, smithy in position 5 */
+     
+    // reset deck and hand counts
+    testGame->deckCount[0] = 0;
+    testGame->handCount[0] = 0;
+    testGame->discardCount[0] = 0;
+    testGame->playedCardCount = 0; 
+
+
+    // Reset deck for player 0
+
+    // Deck holds card values < smithy
+    for(i=curse; i <= remodel ; i++)
+    {
+        testGame->deck[0][i] = i;
+        testGame->deckCount[0] += 1;
+    }
+ 
+    // Discard pile has valid cards
+    for(i = curse; i < remodel; i++)
+    {
+	testGame->discard[0][i] = i; 
+    }
+
+
+    // Played card pile has valid cards
+    for(i = curse; i < remodel; i++)
+    {
+	testGame->playedCards[i] = i;
+    }
+
+    // Set up hand for player 0
+    printf("\nsmithy Test Case 6\n"); 
+    j = 0;
+    while(j < 12)
+    {
+	// get cards from second half of card values
+	for(i = village; i <= treasure_map; i++)
+        {
+	    testGame->hand[0][j] = i;
+            testGame->handCount[0]++;
+            j++;
+            
+            if(j >= 12)
+            {
+		break;
+	    }
+        }
+    }
+    j = 12;
+    while(j < MAX_HAND)
+    {
+	// set the rest of the hand to garbage values
+	testGame->hand[0][j] = -1;
+    	j++;
+            
+        if(j >= MAX_HAND)
+        {
+	  break;
+	}
+    }
+
+
+    // put smithy in position 5
+    testGame->hand[0][5] = smithy;
+    handPos = 5;
+
+    // Save current hand count
+    handCountBefore = testGame->handCount[0];
+
+    // Save a copy of this test struct
+    memcpy(testCopy->hand[0], testGame->hand[0], sizeof(testGame->hand[0]));
+    testCopy->handCount[0] = testGame->handCount[0];
+
+    // call cardEffect
+    returnVal = cardEffect(card, 0, 0, 0, testGame, handPos, 0);
+    
+    // Assert that handCount is 3 - 1 more than current handCount and that returnVal is 0
+    // Check the restults of this test case
+    char* testCase6 = "smithy effect with hand count of 12 and smithy position of 5";
+
+    assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore + 3 - 1, returnVal, 0);
+
+    // Get the result of comparing the hands
+    comparisonResult = checkHandDifferences(testGame, testCopy, handPos, handCountBefore, testGame->handCount[0], 3);
+
+    // Assert that both halves of the test pass
+    if(assertTrue(assertHandCountReturnVal, 1, comparisonResult, 1))
+    {
+	printResults(testCase6, 1);
+    }
+    else
+    {
+	printResults(testCase6, 0);
+    }
+
+    /* Test Case 7: 7 cards in hand, smithy in position 0 */
+     
+    // reset deck and hand counts
+    testGame->deckCount[0] = 0;
+    testGame->handCount[0] = 0;
+    testGame->discardCount[0] = 0;
+    testGame->playedCardCount = 0; 
+
+
+    // Reset deck for player 0
+
+    // Deck holds card values < smithy
+    for(i=curse; i <= remodel ; i++)
+    {
+        testGame->deck[0][i] = i;
+        testGame->deckCount[0] += 1;
+    }
+ 
+    // Discard pile has valid cards
+    for(i = curse; i < remodel; i++)
+    {
+	testGame->discard[0][i] = i; 
+    }
+
+
+    // Played card pile has valid cards
+    for(i = curse; i < remodel; i++)
+    {
+	testGame->playedCards[i] = i;
+    }
+
+    // Set up hand for player 0
+    printf("\nsmithy Test Case 7\n"); 
+    j = 0;
+    while(j < 7)
+    {
+	// get cards from second half of card values
+	for(i = village; i <= treasure_map; i++)
+        {
+	    testGame->hand[0][j] = i;
+            testGame->handCount[0]++;   
+	    j++;
+            
+            if(j >= 7)
+            {
+		break;
+	    }
+        }
+    }
+    j = 7;
+    while(j < MAX_HAND)
+    {
+	// set the rest of the hand to garbage values
+	testGame->hand[0][j] = -1;
+    	j++;
+            
+        if(j >= MAX_HAND)
+        {
+	  break;
+	}
+    }
+
+
+    // put smithy in position 0
+    testGame->hand[0][0] = smithy;
+    handPos = 0;
+
+    // Save current hand count
+    handCountBefore = testGame->handCount[0];
+
+    // Save a copy of this test struct
+    memcpy(testCopy->hand[0], testGame->hand[0], sizeof(testGame->hand[0]));
+    testCopy->handCount[0] = testGame->handCount[0];
+
+    // call cardEffect
+    returnVal = cardEffect(card, 0, 0, 0, testGame, handPos, 0);
+    
+    // Assert that handCount is 3 - 1 more than current handCount and that returnVal is 0
+    // Check the restults of this test case
+    char* testCase7 = "smithy effect with hand count of 7 and smithy position of 0";
+
+    assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore + 3 - 1, returnVal, 0);
+
+
+    // Get the result of comparing the hands
+    comparisonResult = checkHandDifferences(testGame, testCopy, handPos, handCountBefore, testGame->handCount[0], 3);
+
+//    printf("assertHandCountReturnVal: %i, comaprisonResult: %i\n", assertHandCountReturnVal, comparisonResult);
+    
+    // Assert that both halves of the test pass
+    if(assertTrue(assertHandCountReturnVal, 1, comparisonResult, 1))
+    {
+	printResults(testCase7, 1);
+    }
+    else
+    {
+	printResults(testCase7, 0);
+    }
+
 
 }
 
