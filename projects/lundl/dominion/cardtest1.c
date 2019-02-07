@@ -120,6 +120,8 @@ int checkHandDifferences(struct gameState* test, struct gameState* copy, int han
 
 void testSmithy()
 {
+    printf("\n\nUNIT TESTS FOR SMITHY CARD EFFECT\n");
+    
     // Initialize a gameState struct with values we need for this test
     struct gameState* testGame = newGame();
     testGame->numPlayers = 2;
@@ -310,6 +312,7 @@ void testSmithy()
     for(i = curse; i < remodel; i++)
     {
 	testGame->discard[0][i] = i; 
+        testGame->discardCount[0]++;
     }
 
 

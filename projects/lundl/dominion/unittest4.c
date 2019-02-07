@@ -65,6 +65,8 @@ int assertTrue(int actualVal, int expectedVal, int actualReturn, int expectedRet
 
 void testIsGameOver()
 {
+    printf("\n\nUNIT TESTS FOR ISGAMEOVER() FUNCTION\n");
+
     // Initialize a gameState struct with values we need for this test
     struct gameState* testGame = newGame();
 

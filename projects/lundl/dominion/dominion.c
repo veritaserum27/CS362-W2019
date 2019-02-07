@@ -1270,8 +1270,8 @@ int adventurerEffect(struct gameState *state, int currentPlayer)
 	drawCard(currentPlayer, state);
 	cardDrawn = state->hand[currentPlayer][state->handCount[currentPlayer]-1];//top card of hand is most recently drawn card.
 	// BUG: If a copper is drawn, it is not recognized as treasure
-       if (cardDrawn == silver || cardDrawn == gold) {
-       // if (cardDrawn == copper || cardDrawn == silver || cardDrawn == gold) {
+        if (cardDrawn == silver || cardDrawn == gold) {
+        //if (cardDrawn == copper || cardDrawn == silver || cardDrawn == gold) {
 	  drawntreasure++;
 	}
 	else {

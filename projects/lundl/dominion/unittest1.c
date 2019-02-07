@@ -107,6 +107,8 @@ int checkDeckDifferences(struct gameState* test, struct gameState* copy)
 
 void testShuffle()
 {
+    printf("UNIT TESTS FOR SHUFFLE() FUNCTION\n");
+    
     // Initialize a gameState struct with values we need for this test
     struct gameState* testGame = newGame();
     testGame->numPlayers = 2;

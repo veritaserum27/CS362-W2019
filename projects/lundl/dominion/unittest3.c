@@ -64,6 +64,8 @@ int assertTrue(int actualVal, int expectedVal, int actualReturn, int expectedRet
 
 void testGetCost()
 {
+    printf("\n\nUNIT TESTS FOR GETCOST() FUNCTION\n");
+
     /* Test Case 1: curse
      * We expect getCost to return 0 */
 
