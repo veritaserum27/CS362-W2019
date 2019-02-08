@@ -2,6 +2,7 @@
  * Author: Laura Lund, lundl@oregonstate.edu
  * Assignment: CS 362 Winter 2019, Assignment 3
  * Description: This is a unit test for the card adventurer in dominion.c.
+ * Citation: The example given in the assignment: cardtest4.c
  * ***************************************************************************/
 #include "dominion.h"
 #include "dominion_helpers.h" 
@@ -12,6 +13,7 @@
 #include <time.h>
 #include <string.h>
 
+#define TESTCARD "adventurer"
 /******************************************************************************
  * Name: printResults
  * Parameters: a char* holding a string to be printed, an int holding a test
@@ -25,632 +27,1753 @@ void printResults(char* testCase, int assertResult)
 {
     if(assertResult == 0)
     {
-	printf("adventurer: FAIL %s\n", testCase);
+	printf("    adventurer: FAIL %s\n", testCase);
     }
     else
     {
-	printf("adventurer: PASS %s\n", testCase);
+	printf("    adventurer: PASS %s\n", testCase);
     }
 }
-
 
 /******************************************************************************
  * Name: assertTrue()
  * Parameters: four ints: one holding the actual value of the test result, 
- * 	one holding the expected value of the test result, one holding the 
- * 	actual return value of a call to the tested function, and one holding
- * 	the expected return value of a call to the tested function.
- * Description: This helper function compares actual values to expected values.
- * 	If the actual values match the expected values, return 1. Otherwise, 
+ * 	one holding the expected value of the test result
+ * Description: This helper function compares actual value to expected value.
+ * 	If the actual value matches the expected value, return 1. Otherwise, 
  * 	return 0.
- * Return Value: Returns 1 if the input values are "true." Returns 0 otherwise.
+ * Return Value: Returns 1 if the input values match "true." Returns 0 otherwise.
  * ***************************************************************************/
-int assertTrue(int actualVal, int expectedVal, int actualReturn, int expectedReturn)
+int assertTrue(int actualVal, int expectedVal)
 {
-    if((actualVal == expectedVal) && (actualReturn == expectedReturn))
+    if(actualVal == expectedVal)
     {
 	return 1;
     }
     return 0;
 }
 
-/******************************************************************************
- * Name: checkForTreasure()
- * Parameters: a gameState struct pointer to a struct holding the result of
- * 	a call to cardEffect(adventurer) and a gameState struct pointer to a struct
- * 	holding the original hand.
- * Description: This helper function compares values of two hand to check
- * 	whether the altered hand holds two additional treasure cards.
- * Return Value: If the altered hand holds two new treasure cards, 
- * 	return 1. Otherwise, return 0.
- * ***************************************************************************/
-int checkForTreasure(struct gameState* test, struct gameState* copy)
+int main()
 {
- 
-    int i;
-    int treasure = 0;
+    int newCards = 2; // adventurer should return 2 new treasure cards
+	int treasureCardsHand = 0; // update with actual treasure cards in hand
+	int handCountComparison = 0; // 1 if handcount matches expected value
+	int discarded = 1; // the card played will be discarded
+	int deckCountComparision = 0; // 1 if deckCount matches expected value
+    
+	int numPlayers = 2;
+	int thisPlayer = 0;
+	int player1HandMatch = 1; // 0 if player 1's hand changes 
+	int player1DeckMatch = 1; // 0 if player 1's deck changes
+	int player1HandComp = 0; // 1 if matches expected value
+	int player1DeckComp = 0; // 1 if matches expected value
+	
+	int player2HandMatch = 1; // 0 if player 2's hand changes 
+	int player2DeckMatch = 1; // 0 if player 2's deck changes
+	int player2HandComp = 0; // 1 if matches expected value
+	int player2DeckComp = 0; // 1 if matches expected value
+	
+	int player3HandMatch = 1; // 0 if player 3's hand changes 
+	int player3DeckMatch = 1; // 0 if player 3's deck changes
+	int player3HandComp = 0; // 1 if matches expected value
+	int player3DeckComp = 0; // 1 if matches expected value
+	
+	int kingdomMatch = 1; // 0 if kingdom cards in states differ
+	int victoryMatch = 1; // 0 if victory cards in states differ
+	int kingdomComp = 0; // 1 if matches expected value
+	int victoryComp = 0; // 1 if matches expected value
+	
+    int handPos = 0, choice1 = 0, choice2 = 0, choice3 = 0, bonus = 0;
+	int i;
+    int seed = 1000; // needed for game initialization
 
-    // Count all the treasure cards (original hand has no treasure cards)
-    for(i = 0; i < test->handCount[0]; i++)
-    {
-	if((test->hand[0][i] == gold)||(test->hand[0][i] == silver)||(test->hand[0][i] == copper))
+    // This the the state of the game that will be sent to adventurer
+    struct gameState testGame;
+	
+	// This is the state of the game that will be used to preserve the original state
+	struct gameState originalGame;
+	
+	// Kingdom cards in play
+	int k[10] = {smithy, embargo, village, minion, mine, cutpurse, sea_hag,
+		tribute, baron, council_room};
+	
+	// initialize game state and player cards
+	initializeGame(numPlayers, k, seed, &originalGame); 
+    
+	// Put adventurer in the last hand position for this player
+	//int originalCard = originalGame.hand[thisPlayer]
+		//[originalGame.handCount[thisPlayer]-1]; // save original card
+	originalGame.hand[thisPlayer][originalGame.handCount[thisPlayer] - 1] = adventurer;
+	handPos = originalGame.handCount[thisPlayer] - 1;
+	
+	printf("---------- Testing Card: %s ----------\n", TESTCARD);
+	
+	// ----- Test 1: hand count of 5, adventurer in pos 4, 2 players -----
+	printf("-----Test 1: hand count of 5, adventurer in pos 4, 2 players-----\n");
+	printf("-----Deck holds 2 estates and 3 coppers-----\n");
+
+	
+	// Copy game into test
+	memcpy(&testGame, &originalGame, sizeof(struct gameState));
+	
+	cardEffect(adventurer, choice1, choice2, choice3, &testGame, handPos, &bonus);
+	
+	// hand count should be 2 - 1 more than original hand count
+	// assert that the above is true
+	handCountComparison = assertTrue(testGame.handCount[thisPlayer], 
+		originalGame.handCount[thisPlayer] + newCards - discarded);
+		
+	// Print result
+	printResults("+1 cards in hand count", handCountComparison);
+	if(handCountComparison == 0)
 	{
-	   treasure++;
+		printf("        hand count: %i, expected: %i\n", 
+			testGame.handCount[thisPlayer], originalGame.handCount[thisPlayer] 
+			+ newCards - discarded);	
 	}
-    }
-   
-    if(treasure == 2)
-    {
-        // The altered hand holds two new treasure cards
-        return 1;
-    }
+	
+	// deck count should be <= original deck count - 2
+	if(testGame.deckCount[thisPlayer] <=
+		originalGame.deckCount[thisPlayer] - newCards)
+	{
+		// assert that the above is true
+		deckCountComparision = 1;
+	}
+	
+	// print result
+	printResults("deck count reduced by 2 or more cards", deckCountComparision);
+	if(deckCountComparision == 0)
+	{
+		printf("        deck count: %i, expected: <=%i\n", 
+			testGame.deckCount[thisPlayer], originalGame.deckCount[thisPlayer] 
+			- newCards);	
+	}
+	
+	// Count the new treasure cards in this player's handfor (i=0; i < originalGame.handCount[1]; i++)
+	for(i=0; i < testGame.handCount[0]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[thisPlayer][i] != testGame.hand[0][i])
+		{
+			// this is a new card
+			// if it is a treasure card
+			if((testGame.hand[thisPlayer][i] == copper) ||
+			(testGame.hand[thisPlayer][i] == silver) ||
+			(testGame.hand[thisPlayer][i] == gold))
+			{
+				// increment the count
+				treasureCardsHand++;
+			}
+		}
+	}
+	
+	// New cards that are treasure cards should be exactly 2
+	printResults("+2 treasure cards", assertTrue(treasureCardsHand, 2));
+	
+	if(!assertTrue(treasureCardsHand, 2))
+	{
+		printf("        new treasure card count: %i, expected: 2\n", treasureCardsHand);
+	}
+	
+	// The states of other players should not change. 
+	// Check hand and deck of other players.
+	// Check hand
+	for (i=0; i < originalGame.handCount[1]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[1][i] != testGame.hand[1][i])
+		{
+			// this player had a change in their hand
+			player1HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[1]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[1][i] != testGame.deck[1][i])
+		{
+			// this player had a change in their hand
+			player1DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player1HandComp = assertTrue(player1HandMatch, 1);
+	
+	// print result
+	printResults("player 1's hand unchanged", player1HandComp);
+	
+	// Assert that the other player's deck did not change
+	player1DeckComp = assertTrue(player1DeckMatch, 1);
+	
+	// print result
+	printResults("player 1's deck unchanged", player1DeckComp);
+	
+	// adventurer should no longer be in this player's hand at handPos
+	if(testGame.hand[thisPlayer][handPos] == adventurer)
+	{
+		// print result
+		printResults("adventurer not in hand", 0);
+	}
+	else
+	{
+		// print result
+		printResults("adventurer not in hand", 1);
+	}
+	
+	// kingdom and victory cards should not change
+	// kingdom cards
+	for(i = 0; i < sizeof(k); i++)
+	{
+		// if the kingdom cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[k[i]] != testGame.supplyCount[k[i]])
+		{
+			printf("kingdom card %i is different at %i\n", k[i], i);
+			kingdomMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in kingdom cards
+	kingdomComp = assertTrue(kingdomMatch, 1);
+	
+	printResults("kingdom cards unchanged", kingdomComp);
+	
+	// victory cards
+	for(i = estate; i <= province; i++)
+	{
+		// if the victory cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[i] != testGame.supplyCount[i])
+		{
+			printf("victory card %i is different\n", i);
+			victoryMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in victory cards
+	victoryComp = assertTrue(victoryMatch, 1);
+	
+	printResults("victory cards unchanged", victoryComp);
+	
+	// ----- Test 2: hand count of 5, adventurer in pos 4, 2 players -----
+	printf("\n-----Test 2: hand count of 5, adventurer in pos 4, 2 players-----\n");
+	printf("-----Deck holds 2 silvers and 3 coppers-----\n");
 
-    // The altered hand does not hold two new treasure cards
-    return 0;
+    // Set deck to hold silvers where the estate cards are now
+	for(i = 0; i < originalGame.deckCount[thisPlayer]; i++)
+	{
+		if(originalGame.deck[thisPlayer][i] == estate)
+		{
+			originalGame.deck[thisPlayer][i] = silver;
+		}
+	}
+
+
+	// Copy game into test
+	memcpy(&testGame, &originalGame, sizeof(struct gameState));
+	
+	cardEffect(adventurer, choice1, choice2, choice3, &testGame, handPos, &bonus);
+	
+	
+	// hand count should be 2 - 1 more than original hand count
+	// assert that the above is true
+	handCountComparison = assertTrue(testGame.handCount[thisPlayer], 
+		originalGame.handCount[thisPlayer] + newCards - discarded);
+		
+	// Print result
+	printResults("+1 cards in hand count", handCountComparison);
+	if(handCountComparison == 0)
+	{
+		printf("        hand count: %i, expected: %i\n", 
+			testGame.handCount[thisPlayer], originalGame.handCount[thisPlayer] 
+			+ newCards - discarded);	
+	}
+	
+	// deck count should be <= original deck count - 2
+	if(testGame.deckCount[thisPlayer] <=
+		originalGame.deckCount[thisPlayer] - newCards)
+	{
+		// assert that the above is true
+		deckCountComparision = 1;
+	}
+	
+	// print result
+	printResults("deck count reduced by 2 or more cards", deckCountComparision);
+	if(deckCountComparision == 0)
+	{
+		printf("        deck count: %i, expected: <=%i\n", 
+			testGame.deckCount[thisPlayer], originalGame.deckCount[thisPlayer] 
+			- newCards);	
+	}
+	
+	// Count the new treasure cards in this player's handfor (i=0; i < originalGame.handCount[1]; i++)
+	treasureCardsHand = 0;
+    for(i=0; i < testGame.handCount[0]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[thisPlayer][i] != testGame.hand[0][i])
+		{
+			// this is a new card
+			// if it is a treasure card
+			if((testGame.hand[thisPlayer][i] == copper) ||
+			(testGame.hand[thisPlayer][i] == silver) ||
+			(testGame.hand[thisPlayer][i] == gold))
+			{
+				// increment the count
+				treasureCardsHand++;
+			}
+		}
+	}
+	
+	// New cards that are treasure cards should be exactly 2
+	printResults("+2 treasure cards", assertTrue(treasureCardsHand, 2));
+	
+	if(!assertTrue(treasureCardsHand, 2))
+	{
+		printf("        new treasure card count: %i, expected: 2\n", treasureCardsHand);
+	}
+	
+	// The states of other players should not change. 
+	// Check hand and deck of other players.
+	// Check hand
+	for (i=0; i < originalGame.handCount[1]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[1][i] != testGame.hand[1][i])
+		{
+			// this player had a change in their hand
+			player1HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[1]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[1][i] != testGame.deck[1][i])
+		{
+			// this player had a change in their hand
+			player1DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player1HandComp = assertTrue(player1HandMatch, 1);
+	
+	// print result
+	printResults("player 1's hand unchanged", player1HandComp);
+	
+	// Assert that the other player's deck did not change
+	player1DeckComp = assertTrue(player1DeckMatch, 1);
+	
+	// print result
+	printResults("player 1's deck unchanged", player1DeckComp);
+	
+	// adventurer should no longer be in this player's hand at handPos
+	if(testGame.hand[thisPlayer][handPos] == adventurer)
+	{
+		// print result
+		printResults("adventurer not in hand", 0);
+	}
+	else
+	{
+		// print result
+		printResults("adventurer not in hand", 1);
+	}
+	
+	// kingdom and victory cards should not change
+	// kingdom cards
+	for(i = 0; i < sizeof(k); i++)
+	{
+		// if the kingdom cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[k[i]] != testGame.supplyCount[k[i]])
+		{
+			printf("kingdom card %i is different at %i\n", k[i], i);
+			kingdomMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in kingdom cards
+	kingdomComp = assertTrue(kingdomMatch, 1);
+	
+	printResults("kingdom cards unchanged", kingdomComp);
+	
+	// victory cards
+	for(i = estate; i <= province; i++)
+	{
+		// if the victory cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[i] != testGame.supplyCount[i])
+		{
+			printf("victory card %i is different\n", i);
+			victoryMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in victory cards
+	victoryComp = assertTrue(victoryMatch, 1);
+	
+	printResults("victory cards unchanged", victoryComp);
+	
+	// ----- Test 3: hand count of 5, adventurer in pos 4, 2 players -----
+	printf("\n-----Test 3: hand count of 5, adventurer in pos 4, 2 players-----\n");
+	printf("-----Deck holds 2 silvers and 3 estates-----\n");
+
+    // Set deck to hold 2 silvers and 3 estates
+	originalGame.deck[thisPlayer][0] = silver;
+	originalGame.deck[thisPlayer][1] = silver;
+	originalGame.deck[thisPlayer][2] = estate;
+	originalGame.deck[thisPlayer][3] = estate;
+	originalGame.deck[thisPlayer][4] = estate;
+	
+
+	// Copy game into test
+	memcpy(&testGame, &originalGame, sizeof(struct gameState));
+	
+	cardEffect(adventurer, choice1, choice2, choice3, &testGame, handPos, &bonus);
+	
+	
+	// hand count should be 2 - 1 more than original hand count
+	// assert that the above is true
+	handCountComparison = assertTrue(testGame.handCount[thisPlayer], 
+		originalGame.handCount[thisPlayer] + newCards - discarded);
+		
+	// Print result
+	printResults("+1 cards in hand count", handCountComparison);
+	if(handCountComparison == 0)
+	{
+		printf("        hand count: %i, expected: %i\n", 
+			testGame.handCount[thisPlayer], originalGame.handCount[thisPlayer] 
+			+ newCards - discarded);	
+	}
+	
+	// deck count should be <= original deck count - 2
+	if(testGame.deckCount[thisPlayer] <=
+		originalGame.deckCount[thisPlayer] - newCards)
+	{
+		// assert that the above is true
+		deckCountComparision = 1;
+	}
+	
+	// print result
+	printResults("deck count reduced by 2 or more cards", deckCountComparision);
+	if(deckCountComparision == 0)
+	{
+		printf("        deck count: %i, expected: <=%i\n", 
+			testGame.deckCount[thisPlayer], originalGame.deckCount[thisPlayer] 
+			- newCards);	
+	}
+	
+	// Count the new treasure cards in this player's handfor (i=0; i < originalGame.handCount[1]; i++)
+	treasureCardsHand = 0;
+    for(i=0; i < testGame.handCount[0]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[thisPlayer][i] != testGame.hand[0][i])
+		{
+			// this is a new card
+			// if it is a treasure card
+			if((testGame.hand[thisPlayer][i] == copper) ||
+			(testGame.hand[thisPlayer][i] == silver) ||
+			(testGame.hand[thisPlayer][i] == gold))
+			{
+				// increment the count
+				treasureCardsHand++;
+			}
+		}
+	}
+	
+	// New cards that are treasure cards should be exactly 2
+	printResults("+2 treasure cards", assertTrue(treasureCardsHand, 2));
+	
+	if(!assertTrue(treasureCardsHand, 2))
+	{
+		printf("        new treasure card count: %i, expected: 2\n", treasureCardsHand);
+	}
+	
+	// The states of other players should not change. 
+	// Check hand and deck of other players.
+	// Check hand
+	for (i=0; i < originalGame.handCount[1]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[1][i] != testGame.hand[1][i])
+		{
+			// this player had a change in their hand
+			player1HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[1]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[1][i] != testGame.deck[1][i])
+		{
+			// this player had a change in their hand
+			player1DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player1HandComp = assertTrue(player1HandMatch, 1);
+	
+	// print result
+	printResults("player 1's hand unchanged", player1HandComp);
+	
+	// Assert that the other player's deck did not change
+	player1DeckComp = assertTrue(player1DeckMatch, 1);
+	
+	// print result
+	printResults("player 1's deck unchanged", player1DeckComp);
+	
+	// adventurer should no longer be in this player's hand at handPos
+	if(testGame.hand[thisPlayer][handPos] == adventurer)
+	{
+		// print result
+		printResults("adventurer not in hand", 0);
+	}
+	else
+	{
+		// print result
+		printResults("adventurer not in hand", 1);
+	}
+	
+	// kingdom and victory cards should not change
+	// kingdom cards
+	for(i = 0; i < sizeof(k); i++)
+	{
+		// if the kingdom cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[k[i]] != testGame.supplyCount[k[i]])
+		{
+			printf("kingdom card %i is different at %i\n", k[i], i);
+			kingdomMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in kingdom cards
+	kingdomComp = assertTrue(kingdomMatch, 1);
+	
+	printResults("kingdom cards unchanged", kingdomComp);
+	
+	// victory cards
+	for(i = estate; i <= province; i++)
+	{
+		// if the victory cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[i] != testGame.supplyCount[i])
+		{
+			printf("victory card %i is different\n", i);
+			victoryMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in victory cards
+	victoryComp = assertTrue(victoryMatch, 1);
+	
+	printResults("victory cards unchanged", victoryComp);
+	
+	// ----- Test 4: hand count of 5, adventurer in pos 4, 2 players -----
+	printf("\n-----Test 4: hand count of 5, adventurer in pos 4, 2 players-----\n");
+	printf("-----Deck holds 2 silvers-----\n");
+
+    // Set deck to hold 2 silvers
+	originalGame.deckCount[thisPlayer] = 2;
+	
+	// Copy game into test
+	memcpy(&testGame, &originalGame, sizeof(struct gameState));
+	
+	cardEffect(adventurer, choice1, choice2, choice3, &testGame, handPos, &bonus);
+	
+	
+	// hand count should be 2 - 1 more than original hand count
+	// assert that the above is true
+	handCountComparison = assertTrue(testGame.handCount[thisPlayer], 
+		originalGame.handCount[thisPlayer] + newCards - discarded);
+		
+	// Print result
+	printResults("+1 cards in hand count", handCountComparison);
+	if(handCountComparison == 0)
+	{
+		printf("        hand count: %i, expected: %i\n", 
+			testGame.handCount[thisPlayer], originalGame.handCount[thisPlayer] 
+			+ newCards - discarded);	
+	}
+	
+	// deck count should be <= original deck count - 2
+	if(testGame.deckCount[thisPlayer] <=
+		originalGame.deckCount[thisPlayer] - newCards)
+	{
+		// assert that the above is true
+		deckCountComparision = 1;
+	}
+	
+	// print result
+	printResults("deck count reduced by 2 or more cards", deckCountComparision);
+	if(deckCountComparision == 0)
+	{
+		printf("        deck count: %i, expected: <=%i\n", 
+			testGame.deckCount[thisPlayer], originalGame.deckCount[thisPlayer] 
+			- newCards);	
+	}
+	
+	// Count the new treasure cards in this player's handfor (i=0; i < originalGame.handCount[1]; i++)
+	treasureCardsHand = 0;
+    for(i=0; i < testGame.handCount[0]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[thisPlayer][i] != testGame.hand[0][i])
+		{
+			// this is a new card
+			// if it is a treasure card
+			if((testGame.hand[thisPlayer][i] == copper) ||
+			(testGame.hand[thisPlayer][i] == silver) ||
+			(testGame.hand[thisPlayer][i] == gold))
+			{
+				// increment the count
+				treasureCardsHand++;
+			}
+		}
+	}
+	
+	// New cards that are treasure cards should be exactly 2
+	printResults("+2 treasure cards", assertTrue(treasureCardsHand, 2));
+	
+	if(!assertTrue(treasureCardsHand, 2))
+	{
+		printf("        new treasure card count: %i, expected: 2\n", treasureCardsHand);
+	}
+	
+	// The states of other players should not change. 
+	// Check hand and deck of other players.
+	// Check hand
+	for (i=0; i < originalGame.handCount[1]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[1][i] != testGame.hand[1][i])
+		{
+			// this player had a change in their hand
+			player1HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[1]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[1][i] != testGame.deck[1][i])
+		{
+			// this player had a change in their hand
+			player1DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player1HandComp = assertTrue(player1HandMatch, 1);
+	
+	// print result
+	printResults("player 1's hand unchanged", player1HandComp);
+	
+	// Assert that the other player's deck did not change
+	player1DeckComp = assertTrue(player1DeckMatch, 1);
+	
+	// print result
+	printResults("player 1's deck unchanged", player1DeckComp);
+	
+	// adventurer should no longer be in this player's hand at handPos
+	if(testGame.hand[thisPlayer][handPos] == adventurer)
+	{
+		// print result
+		printResults("adventurer not in hand", 0);
+	}
+	else
+	{
+		// print result
+		printResults("adventurer not in hand", 1);
+	}
+	
+	// kingdom and victory cards should not change
+	// kingdom cards
+	for(i = 0; i < sizeof(k); i++)
+	{
+		// if the kingdom cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[k[i]] != testGame.supplyCount[k[i]])
+		{
+			printf("kingdom card %i is different at %i\n", k[i], i);
+			kingdomMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in kingdom cards
+	kingdomComp = assertTrue(kingdomMatch, 1);
+	
+	printResults("kingdom cards unchanged", kingdomComp);
+	
+	// victory cards
+	for(i = estate; i <= province; i++)
+	{
+		// if the victory cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[i] != testGame.supplyCount[i])
+		{
+			printf("victory card %i is different\n", i);
+			victoryMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in victory cards
+	victoryComp = assertTrue(victoryMatch, 1);
+	
+	printResults("victory cards unchanged", victoryComp);
+	
+	// ----- Test 5: hand count of 5, adventurer in pos 4, 2 players -----
+	printf("\n-----Test 5: hand count of 5, adventurer in pos 4, 2 players-----\n");
+	printf("-----Deck holds 2 coppers-----\n");
+
+    // Set deck to hold 2 coppers
+	originalGame.deck[thisPlayer][0] = copper;
+	originalGame.deck[thisPlayer][1] = copper;
+	originalGame.deckCount[thisPlayer] = 2;
+	
+	// Copy game into test
+	memcpy(&testGame, &originalGame, sizeof(struct gameState));
+	
+	cardEffect(adventurer, choice1, choice2, choice3, &testGame, handPos, &bonus);
+	
+	
+	// hand count should be 2 - 1 more than original hand count
+	// assert that the above is true
+	handCountComparison = assertTrue(testGame.handCount[thisPlayer], 
+		originalGame.handCount[thisPlayer] + newCards - discarded);
+		
+	// Print result
+	printResults("+1 cards in hand count", handCountComparison);
+	if(handCountComparison == 0)
+	{
+		printf("        hand count: %i, expected: %i\n", 
+			testGame.handCount[thisPlayer], originalGame.handCount[thisPlayer] 
+			+ newCards - discarded);	
+	}
+	
+	// deck count should be <= original deck count - 2
+	if(testGame.deckCount[thisPlayer] <=
+		originalGame.deckCount[thisPlayer] - newCards)
+	{
+		// assert that the above is true
+		deckCountComparision = 1;
+	}
+	
+	// print result
+	printResults("deck count reduced by 2 or more cards", deckCountComparision);
+	if(deckCountComparision == 0)
+	{
+		printf("        deck count: %i, expected: <=%i\n", 
+			testGame.deckCount[thisPlayer], originalGame.deckCount[thisPlayer] 
+			- newCards);	
+	}
+	
+	// Count the new treasure cards in this player's handfor (i=0; i < originalGame.handCount[1]; i++)
+	treasureCardsHand = 0;
+    for(i=0; i < testGame.handCount[0]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[thisPlayer][i] != testGame.hand[0][i])
+		{
+			// this is a new card
+			// if it is a treasure card
+			if((testGame.hand[thisPlayer][i] == copper) ||
+			(testGame.hand[thisPlayer][i] == silver) ||
+			(testGame.hand[thisPlayer][i] == gold))
+			{
+				// increment the count
+				treasureCardsHand++;
+			}
+		}
+	}
+	
+	// New cards that are treasure cards should be exactly 2
+	printResults("+2 treasure cards", assertTrue(treasureCardsHand, 2));
+	
+	if(!assertTrue(treasureCardsHand, 2))
+	{
+		printf("        new treasure card count: %i, expected: 2\n", treasureCardsHand);
+	}
+	
+	// The states of other players should not change. 
+	// Check hand and deck of other players.
+	// Check hand
+	for (i=0; i < originalGame.handCount[1]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[1][i] != testGame.hand[1][i])
+		{
+			// this player had a change in their hand
+			player1HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[1]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[1][i] != testGame.deck[1][i])
+		{
+			// this player had a change in their hand
+			player1DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player1HandComp = assertTrue(player1HandMatch, 1);
+	
+	// print result
+	printResults("player 1's hand unchanged", player1HandComp);
+	
+	// Assert that the other player's deck did not change
+	player1DeckComp = assertTrue(player1DeckMatch, 1);
+	
+	// print result
+	printResults("player 1's deck unchanged", player1DeckComp);
+	
+	// adventurer should no longer be in this player's hand at handPos
+	if(testGame.hand[thisPlayer][handPos] == adventurer)
+	{
+		// print result
+		printResults("adventurer not in hand", 0);
+	}
+	else
+	{
+		// print result
+		printResults("adventurer not in hand", 1);
+	}
+	
+	// kingdom and victory cards should not change
+	// kingdom cards
+	for(i = 0; i < sizeof(k); i++)
+	{
+		// if the kingdom cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[k[i]] != testGame.supplyCount[k[i]])
+		{
+			printf("kingdom card %i is different at %i\n", k[i], i);
+			kingdomMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in kingdom cards
+	kingdomComp = assertTrue(kingdomMatch, 1);
+	
+	printResults("kingdom cards unchanged", kingdomComp);
+	
+	// victory cards
+	for(i = estate; i <= province; i++)
+	{
+		// if the victory cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[i] != testGame.supplyCount[i])
+		{
+			printf("victory card %i is different\n", i);
+			victoryMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in victory cards
+	victoryComp = assertTrue(victoryMatch, 1);
+	
+	printResults("victory cards unchanged", victoryComp);
+	
+	// ----- Test 6: hand count of 5, adventurer in pos 4, 2 players -----
+	printf("\n-----Test 6: hand count of 5, adventurer in pos 4, 2 players-----\n");
+	printf("-----Deck holds 2 gold-----\n");
+
+    // Set deck to hold 2 gold
+	originalGame.deck[thisPlayer][0] = gold;
+	originalGame.deck[thisPlayer][1] = gold;
+	originalGame.deckCount[thisPlayer] = 2;
+	
+
+	// Copy game into test
+	memcpy(&testGame, &originalGame, sizeof(struct gameState));
+	
+	cardEffect(adventurer, choice1, choice2, choice3, &testGame, handPos, &bonus);
+	
+	
+	// hand count should be 2 - 1 more than original hand count
+	// assert that the above is true
+	handCountComparison = assertTrue(testGame.handCount[thisPlayer], 
+		originalGame.handCount[thisPlayer] + newCards - discarded);
+		
+	// Print result
+	printResults("+1 cards in hand count", handCountComparison);
+	if(handCountComparison == 0)
+	{
+		printf("        hand count: %i, expected: %i\n", 
+			testGame.handCount[thisPlayer], originalGame.handCount[thisPlayer] 
+			+ newCards - discarded);	
+	}
+	
+	// deck count should be <= original deck count - 2
+	if(testGame.deckCount[thisPlayer] <=
+		originalGame.deckCount[thisPlayer] - newCards)
+	{
+		// assert that the above is true
+		deckCountComparision = 1;
+	}
+	
+	// print result
+	printResults("deck count reduced by 2 or more cards", deckCountComparision);
+	if(deckCountComparision == 0)
+	{
+		printf("        deck count: %i, expected: <=%i\n", 
+			testGame.deckCount[thisPlayer], originalGame.deckCount[thisPlayer] 
+			- newCards);	
+	}
+	
+	// Count the new treasure cards in this player's handfor (i=0; i < originalGame.handCount[1]; i++)
+	treasureCardsHand = 0;
+    for(i=0; i < testGame.handCount[0]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[thisPlayer][i] != testGame.hand[0][i])
+		{
+			// this is a new card
+			// if it is a treasure card
+			if((testGame.hand[thisPlayer][i] == copper) ||
+			(testGame.hand[thisPlayer][i] == silver) ||
+			(testGame.hand[thisPlayer][i] == gold))
+			{
+				// increment the count
+				treasureCardsHand++;
+			}
+		}
+	}
+	
+	// New cards that are treasure cards should be exactly 2
+	printResults("+2 treasure cards", assertTrue(treasureCardsHand, 2));
+	
+	if(!assertTrue(treasureCardsHand, 2))
+	{
+		printf("        new treasure card count: %i, expected: 2\n", treasureCardsHand);
+	}
+	
+	// The states of other players should not change. 
+	// Check hand and deck of other players.
+	// Check hand
+	for (i=0; i < originalGame.handCount[1]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[1][i] != testGame.hand[1][i])
+		{
+			// this player had a change in their hand
+			player1HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[1]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[1][i] != testGame.deck[1][i])
+		{
+			// this player had a change in their hand
+			player1DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player1HandComp = assertTrue(player1HandMatch, 1);
+	
+	// print result
+	printResults("player 1's hand unchanged", player1HandComp);
+	
+	// Assert that the other player's deck did not change
+	player1DeckComp = assertTrue(player1DeckMatch, 1);
+	
+	// print result
+	printResults("player 1's deck unchanged", player1DeckComp);
+
+	
+	// adventurer should no longer be in this player's hand at handPos
+	if(testGame.hand[thisPlayer][handPos] == adventurer)
+	{
+		// print result
+		printResults("adventurer not in hand", 0);
+	}
+	else
+	{
+		// print result
+		printResults("adventurer not in hand", 1);
+	}
+	
+	// kingdom and victory cards should not change
+	// kingdom cards
+	for(i = 0; i < sizeof(k); i++)
+	{
+		// if the kingdom cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[k[i]] != testGame.supplyCount[k[i]])
+		{
+			printf("kingdom card %i is different at %i\n", k[i], i);
+			kingdomMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in kingdom cards
+	kingdomComp = assertTrue(kingdomMatch, 1);
+	
+	printResults("kingdom cards unchanged", kingdomComp);
+	
+	// victory cards
+	for(i = estate; i <= province; i++)
+	{
+		// if the victory cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[i] != testGame.supplyCount[i])
+		{
+			printf("victory card %i is different\n", i);
+			victoryMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in victory cards
+	victoryComp = assertTrue(victoryMatch, 1);
+	
+	printResults("victory cards unchanged", victoryComp);
+	
+	// ----- Test 7: hand count of 5, adventurer in pos 4, 2 players -----
+	printf("\n-----Test 7: hand count of 5, adventurer in pos 4, 3 players-----\n");
+	printf("-----Deck holds 2 gold-----\n");
+	
+	// reinitialize game for 3 players
+	numPlayers = 3;
+	initializeGame(numPlayers, k, seed, &originalGame); 
+	
+    // Set deck to hold 2 gold
+	originalGame.deck[thisPlayer][0] = gold;
+	originalGame.deck[thisPlayer][1] = gold;
+	originalGame.deckCount[thisPlayer] = 2;
+	
+
+	// Copy game into test
+	memcpy(&testGame, &originalGame, sizeof(struct gameState));
+	
+	cardEffect(adventurer, choice1, choice2, choice3, &testGame, handPos, &bonus);
+	
+	
+	// hand count should be 2 - 1 more than original hand count
+	// assert that the above is true
+	handCountComparison = assertTrue(testGame.handCount[thisPlayer], 
+		originalGame.handCount[thisPlayer] + newCards - discarded);
+		
+	// Print result
+	printResults("+1 cards in hand count", handCountComparison);
+	if(handCountComparison == 0)
+	{
+		printf("        hand count: %i, expected: %i\n", 
+			testGame.handCount[thisPlayer], originalGame.handCount[thisPlayer] 
+			+ newCards - discarded);	
+	}
+	
+	// deck count should be <= original deck count - 2
+	if(testGame.deckCount[thisPlayer] <=
+		originalGame.deckCount[thisPlayer] - newCards)
+	{
+		// assert that the above is true
+		deckCountComparision = 1;
+	}
+	
+	// print result
+	printResults("deck count reduced by 2 or more cards", deckCountComparision);
+	if(deckCountComparision == 0)
+	{
+		printf("        deck count: %i, expected: <=%i\n", 
+			testGame.deckCount[thisPlayer], originalGame.deckCount[thisPlayer] 
+			- newCards);	
+	}
+	
+	// Count the new treasure cards in this player's handfor (i=0; i < originalGame.handCount[1]; i++)
+	treasureCardsHand = 0;
+    for(i=0; i < testGame.handCount[0]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[thisPlayer][i] != testGame.hand[0][i])
+		{
+			// this is a new card
+			// if it is a treasure card
+			if((testGame.hand[thisPlayer][i] == copper) ||
+			(testGame.hand[thisPlayer][i] == silver) ||
+			(testGame.hand[thisPlayer][i] == gold))
+			{
+				// increment the count
+				treasureCardsHand++;
+			}
+		}
+	}
+	
+	// New cards that are treasure cards should be exactly 2
+	printResults("+2 treasure cards", assertTrue(treasureCardsHand, 2));
+	
+	if(!assertTrue(treasureCardsHand, 2))
+	{
+		printf("        new treasure card count: %i, expected: 2\n", treasureCardsHand);
+	}
+	
+	// The states of other players should not change. 
+	// Check hand and deck of other players.
+	// Check hand
+	for (i=0; i < originalGame.handCount[1]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[1][i] != testGame.hand[1][i])
+		{
+			// this player had a change in their hand
+			player1HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[1]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[1][i] != testGame.deck[1][i])
+		{
+			// this player had a change in their hand
+			player1DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player1HandComp = assertTrue(player1HandMatch, 1);
+	
+	// print result
+	printResults("player 1's hand unchanged", player1HandComp);
+	
+	// Assert that the other player's deck did not change
+	player1DeckComp = assertTrue(player1DeckMatch, 1);
+	
+	// print result
+	printResults("player 1's deck unchanged", player1DeckComp);
+	
+	// Player 2
+	// Check hand
+	for (i=0; i < originalGame.handCount[2]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[2][i] != testGame.hand[2][i])
+		{
+			// this player had a change in their hand
+			player2HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[2]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[2][i] != testGame.deck[2][i])
+		{
+			// this player had a change in their hand
+			player2DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player2HandComp = assertTrue(player2HandMatch, 1);
+	
+	// print result
+	printResults("player 2's hand unchanged", player2HandComp);
+	
+	// Assert that the other player's deck did not change
+	player2DeckComp = assertTrue(player2DeckMatch, 1);
+	
+	// print result
+	printResults("player 2's deck unchanged", player2DeckComp);
+	
+	
+	
+	// adventurer should no longer be in this player's hand at handPos
+	if(testGame.hand[thisPlayer][handPos] == adventurer)
+	{
+		// print result
+		printResults("adventurer not in hand", 0);
+	}
+	else
+	{
+		// print result
+		printResults("adventurer not in hand", 1);
+	}
+	
+	// kingdom and victory cards should not change
+	// kingdom cards
+	for(i = 0; i < sizeof(k); i++)
+	{
+		// if the kingdom cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[k[i]] != testGame.supplyCount[k[i]])
+		{
+			printf("kingdom card %i is different at %i\n", k[i], i);
+			kingdomMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in kingdom cards
+	kingdomComp = assertTrue(kingdomMatch, 1);
+	
+	printResults("kingdom cards unchanged", kingdomComp);
+	
+	// victory cards
+	for(i = estate; i <= province; i++)
+	{
+		// if the victory cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[i] != testGame.supplyCount[i])
+		{
+			printf("victory card %i is different\n", i);
+			victoryMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in victory cards
+	victoryComp = assertTrue(victoryMatch, 1);
+	
+	printResults("victory cards unchanged", victoryComp);
+	
+	
+	// ----- Test 8: hand count of 5, adventurer in pos 4, 2 players -----
+	printf("\n-----Test 8: hand count of 5, adventurer in pos 4, 4 players-----\n");
+	printf("-----Deck holds 2 gold-----\n");
+	
+	// reinitialize game for 3 players
+	numPlayers = 4;
+	initializeGame(numPlayers, k, seed, &originalGame); 
+	
+    // Set deck to hold 2 gold
+	originalGame.deck[thisPlayer][0] = gold;
+	originalGame.deck[thisPlayer][1] = gold;
+	originalGame.deckCount[thisPlayer] = 2;
+	
+
+	// Copy game into test
+	memcpy(&testGame, &originalGame, sizeof(struct gameState));
+	
+	cardEffect(adventurer, choice1, choice2, choice3, &testGame, handPos, &bonus);
+	
+	
+	// hand count should be 2 - 1 more than original hand count
+	// assert that the above is true
+	handCountComparison = assertTrue(testGame.handCount[thisPlayer], 
+		originalGame.handCount[thisPlayer] + newCards - discarded);
+		
+	// Print result
+	printResults("+1 cards in hand count", handCountComparison);
+	if(handCountComparison == 0)
+	{
+		printf("        hand count: %i, expected: %i\n", 
+			testGame.handCount[thisPlayer], originalGame.handCount[thisPlayer] 
+			+ newCards - discarded);	
+	}
+	
+	// deck count should be <= original deck count - 2
+	if(testGame.deckCount[thisPlayer] <=
+		originalGame.deckCount[thisPlayer] - newCards)
+	{
+		// assert that the above is true
+		deckCountComparision = 1;
+	}
+	
+	// print result
+	printResults("deck count reduced by 2 or more cards", deckCountComparision);
+	if(deckCountComparision == 0)
+	{
+		printf("        deck count: %i, expected: <=%i\n", 
+			testGame.deckCount[thisPlayer], originalGame.deckCount[thisPlayer] 
+			- newCards);	
+	}
+	
+	// Count the new treasure cards in this player's handfor (i=0; i < originalGame.handCount[1]; i++)
+	treasureCardsHand = 0;
+    for(i=0; i < testGame.handCount[0]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[thisPlayer][i] != testGame.hand[0][i])
+		{
+			// this is a new card
+			// if it is a treasure card
+			if((testGame.hand[thisPlayer][i] == copper) ||
+			(testGame.hand[thisPlayer][i] == silver) ||
+			(testGame.hand[thisPlayer][i] == gold))
+			{
+				// increment the count
+				treasureCardsHand++;
+			}
+		}
+	}
+	
+	// New cards that are treasure cards should be exactly 2
+	printResults("+2 treasure cards", assertTrue(treasureCardsHand, 2));
+	
+	if(!assertTrue(treasureCardsHand, 2))
+	{
+		printf("        new treasure card count: %i, expected: 2\n", treasureCardsHand);
+	}
+	
+	// The states of other players should not change. 
+	// Check hand and deck of other players.
+	// Check hand
+	for (i=0; i < originalGame.handCount[1]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[1][i] != testGame.hand[1][i])
+		{
+			// this player had a change in their hand
+			player1HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[1]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[1][i] != testGame.deck[1][i])
+		{
+			// this player had a change in their hand
+			player1DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player1HandComp = assertTrue(player1HandMatch, 1);
+	
+	// print result
+	printResults("player 1's hand unchanged", player1HandComp);
+	
+	// Assert that the other player's deck did not change
+	player1DeckComp = assertTrue(player1DeckMatch, 1);
+	
+	// print result
+	printResults("player 1's deck unchanged", player1DeckComp);
+	
+	// Player 2
+	// Check hand
+	for (i=0; i < originalGame.handCount[2]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[2][i] != testGame.hand[2][i])
+		{
+			// this player had a change in their hand
+			player2HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[2]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[2][i] != testGame.deck[2][i])
+		{
+			// this player had a change in their hand
+			player2DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player2HandComp = assertTrue(player2HandMatch, 1);
+	
+	// print result
+	printResults("player 2's hand unchanged", player2HandComp);
+	
+	// Assert that the other player's deck did not change
+	player2DeckComp = assertTrue(player2DeckMatch, 1);
+	
+	// print result
+	printResults("player 2's deck unchanged", player2DeckComp);
+	
+	// Player 3
+	// Check hand
+	for (i=0; i < originalGame.handCount[3]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[3][i] != testGame.hand[3][i])
+		{
+			// this player had a change in their hand
+			player3HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[3]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[3][i] != testGame.deck[3][i])
+		{
+			// this player had a change in their hand
+			player3DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player3HandComp = assertTrue(player3HandMatch, 1);
+	
+	// print result
+	printResults("player 3's hand unchanged", player3HandComp);
+	
+	// Assert that the other player's deck did not change
+	player3DeckComp = assertTrue(player3DeckMatch, 1);
+	
+	// print result
+	printResults("player 3's deck unchanged", player3DeckComp);
+	
+	
+	// adventurer should no longer be in this player's hand at handPos
+	if(testGame.hand[thisPlayer][handPos] == adventurer)
+	{
+		// print result
+		printResults("adventurer not in hand", 0);
+	}
+	else
+	{
+		// print result
+		printResults("adventurer not in hand", 1);
+	}
+	
+	// kingdom and victory cards should not change
+	// kingdom cards
+	for(i = 0; i < sizeof(k); i++)
+	{
+		// if the kingdom cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[k[i]] != testGame.supplyCount[k[i]])
+		{
+			printf("kingdom card %i is different at %i\n", k[i], i);
+			kingdomMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in kingdom cards
+	kingdomComp = assertTrue(kingdomMatch, 1);
+	
+	printResults("kingdom cards unchanged", kingdomComp);
+	
+	// victory cards
+	for(i = estate; i <= province; i++)
+	{
+		// if the victory cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[i] != testGame.supplyCount[i])
+		{
+			printf("victory card %i is different\n", i);
+			victoryMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in victory cards
+	victoryComp = assertTrue(victoryMatch, 1);
+	
+	printResults("victory cards unchanged", victoryComp);
+	
+	// ----- Test 9: hand count of 5, adventurer in pos 4, 2 players -----
+	printf("\n-----Test 9: hand count of 5, adventurer in pos 4, 4 players-----\n");
+	printf("-----Deck holds 2 estate (no treasure)-----\n");
+	
+	// reinitialize game for 3 players
+	numPlayers = 4;
+	initializeGame(numPlayers, k, seed, &originalGame); 
+	
+    // Set deck to hold 2 estate
+	originalGame.deck[thisPlayer][0] = estate;
+	originalGame.deck[thisPlayer][1] = estate;
+	originalGame.deckCount[thisPlayer] = 2;
+	
+	// Copy game into test
+	memcpy(&testGame, &originalGame, sizeof(struct gameState));
+	
+	cardEffect(adventurer, choice1, choice2, choice3, &testGame, handPos, &bonus);
+	
+	
+	// hand count should be 2 - 1 more than original hand count
+	// assert that the above is true
+	handCountComparison = assertTrue(testGame.handCount[thisPlayer], 
+		originalGame.handCount[thisPlayer] + newCards - discarded);
+		
+	// Print result
+	printResults("+1 cards in hand count", handCountComparison);
+	if(handCountComparison == 0)
+	{
+		printf("        hand count: %i, expected: %i\n", 
+			testGame.handCount[thisPlayer], originalGame.handCount[thisPlayer] 
+			+ newCards - discarded);	
+	}
+	
+	// deck count should be <= original deck count - 2
+	if(testGame.deckCount[thisPlayer] <=
+		originalGame.deckCount[thisPlayer] - newCards)
+	{
+		// assert that the above is true
+		deckCountComparision = 1;
+	}
+	
+	// print result
+	printResults("deck count reduced by 2 or more cards", deckCountComparision);
+	if(deckCountComparision == 0)
+	{
+		printf("        deck count: %i, expected: <=%i\n", 
+			testGame.deckCount[thisPlayer], originalGame.deckCount[thisPlayer] 
+			- newCards);	
+	}
+	
+	// Count the new treasure cards in this player's handfor (i=0; i < originalGame.handCount[1]; i++)
+	treasureCardsHand = 0;
+    for(i=0; i < testGame.handCount[0]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[thisPlayer][i] != testGame.hand[0][i])
+		{
+			// this is a new card
+			// if it is a treasure card
+			if((testGame.hand[thisPlayer][i] == copper) ||
+			(testGame.hand[thisPlayer][i] == silver) ||
+			(testGame.hand[thisPlayer][i] == gold))
+			{
+				// increment the count
+				treasureCardsHand++;
+			}
+		}
+	}
+	
+	// New cards that are treasure cards should be exactly 2
+	printResults("+2 treasure cards", assertTrue(treasureCardsHand, 2));
+	
+	if(!assertTrue(treasureCardsHand, 2))
+	{
+		printf("        new treasure card count: %i, expected: 2\n", treasureCardsHand);
+	}
+	
+	// The states of other players should not change. 
+	// Check hand and deck of other players.
+	// Check hand
+	for (i=0; i < originalGame.handCount[1]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[1][i] != testGame.hand[1][i])
+		{
+			// this player had a change in their hand
+			player1HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[1]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[1][i] != testGame.deck[1][i])
+		{
+			// this player had a change in their hand
+			player1DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player1HandComp = assertTrue(player1HandMatch, 1);
+	
+	// print result
+	printResults("player 1's hand unchanged", player1HandComp);
+	
+	// Assert that the other player's deck did not change
+	player1DeckComp = assertTrue(player1DeckMatch, 1);
+	
+	// print result
+	printResults("player 1's deck unchanged", player1DeckComp);
+	
+	// Player 2
+	// Check hand
+	for (i=0; i < originalGame.handCount[2]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[2][i] != testGame.hand[2][i])
+		{
+			// this player had a change in their hand
+			player2HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[2]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[2][i] != testGame.deck[2][i])
+		{
+			// this player had a change in their hand
+			player2DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player2HandComp = assertTrue(player2HandMatch, 1);
+	
+	// print result
+	printResults("player 2's hand unchanged", player2HandComp);
+	
+	// Assert that the other player's deck did not change
+	player2DeckComp = assertTrue(player2DeckMatch, 1);
+	
+	// print result
+	printResults("player 2's deck unchanged", player2DeckComp);
+	
+	// Player 3
+	// Check hand
+	for (i=0; i < originalGame.handCount[3]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[3][i] != testGame.hand[3][i])
+		{
+			// this player had a change in their hand
+			player3HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[3]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[3][i] != testGame.deck[3][i])
+		{
+			// this player had a change in their hand
+			player3DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player3HandComp = assertTrue(player3HandMatch, 1);
+	
+	// print result
+	printResults("player 3's hand unchanged", player3HandComp);
+	
+	// Assert that the other player's deck did not change
+	player3DeckComp = assertTrue(player3DeckMatch, 1);
+	
+	// print result
+	printResults("player 3's deck unchanged", player3DeckComp);
+	
+	
+	// adventurer should no longer be in this player's hand at handPos
+	if(testGame.hand[thisPlayer][handPos] == adventurer)
+	{
+		// print result
+		printResults("adventurer not in hand", 0);
+	}
+	else
+	{
+		// print result
+		printResults("adventurer not in hand", 1);
+	}
+	
+	// kingdom and victory cards should not change
+	// kingdom cards
+	for(i = 0; i < sizeof(k); i++)
+	{
+		// if the kingdom cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[k[i]] != testGame.supplyCount[k[i]])
+		{
+			printf("kingdom card %i is different at %i\n", k[i], i);
+			kingdomMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in kingdom cards
+	kingdomComp = assertTrue(kingdomMatch, 1);
+	
+	printResults("kingdom cards unchanged", kingdomComp);
+	
+	// victory cards
+	for(i = estate; i <= province; i++)
+	{
+		// if the victory cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[i] != testGame.supplyCount[i])
+		{
+			printf("victory card %i is different\n", i);
+			victoryMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in victory cards
+	victoryComp = assertTrue(victoryMatch, 1);
+	
+	printResults("victory cards unchanged", victoryComp);
+	
+	printf("---------- Testing for %s complete. ----------\n", TESTCARD);
+	
+	return 0;
 }
 
-
-/******************************************************************************
- * Name: testAdventurer()
- * Parameters: none
- * Description: This unit test checks whether calling cardEffect() with 
- * 	adventurer as the card parameter causes 2 treasures to be drawn from 
- * 	the deck into the hand and the adventurer card to be discarded.
- * Return Value: none
- * ***************************************************************************/
-
-void testAdventurer()
-{
-    printf("\n\nUNIT TESTS FOR ADVENTURER CARD EFFECT\n");
-    // Initialize a gameState struct with values we need for this test
-    struct gameState* testGame = newGame();
-    testGame->numPlayers = 2;
-
-    // set player 0 in whoseTurn
-    testGame->whoseTurn = 0;
-
-    // set card = adventurer
-    int card = adventurer;
-    int handPos = 0; 
-
-    // This gameStruct pointer is used for copies
-    struct gameState* testCopy = newGame();
-
-    // initialize deck and card counts
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
- 
-    // Discard pile has valid cards
-    int i;
-    for(i = 0; i < 20; i++)
-    {
-	testGame->discard[0][i] = province; 
-        testGame->discardCount[0]++;
-    }
-
-
-    /* Test Case 1: deck holds one of each type of treasure */
-    printf("adventurer Test Case 1\n"); 
-
-    // Set up deck for player 0
-  
-    // Deck holds one of each kind of treasure 
-    testGame->deck[0][0] = gold;
-    testGame->deck[0][1] = silver; 
-    testGame->deck[0][2] = copper;
-    testGame->deckCount[0] = 3;
-
-    // Set up hand for player 0
-    int j = 0;
-    while(j < 5)
-    {
-	// get cards from second half of card values
-	for(i = adventurer; i <= treasure_map; i++)
-        {
-	    testGame->hand[0][j] = i;
-            testGame->handCount[0]++;   
-            j++;
-            
-            if(j >= 5)
-            {
-		break;
-	    }
-        }
-    }
-
-    // Save a copy of this test struct
-    memcpy(testCopy->hand[0], testGame->hand[0], sizeof(testGame->hand[0]));
-    testCopy->handCount[0] = testGame->handCount[0];
- 
-  
-    // call cardEffect
-    int returnVal = cardEffect(card, 0, 0, 0, testGame, handPos, 0);
- 
-    // Check the restults of this test case
-    char* testCase1 = "adventurer effect with one of each kind of treasure in deck";
-
-    // Assert the hand count is one card more than before and return value is 0
-    int assertHandCountReturnVal = assertTrue(testGame->handCount[0], testCopy->handCount[0] + 1, returnVal, 0);
-
-    // The new hand should have two treasure cards
-    int treasureResult = checkForTreasure(testGame, testCopy);
-
-    // Assert that both halves of the test pass
-    if(assertTrue(assertHandCountReturnVal, 1, treasureResult, 1))
-    {
-	printResults(testCase1, 1);
-    }
-    else
-    {
-	printResults(testCase1, 0);
-    }
-
-    /* Test Case 2: deck holds one gold and one silver */
-    printf("\nadventurer Test Case 2\n"); 
-
-   // reset deck and card counts
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
- 
-    // Discard pile has valid cards
-    for(i = 0; i < 20; i++)
-    {
-	testGame->discard[0][i] = province; 
-        testGame->discardCount[0]++;
-    }
-
-
-
-    // Set up deck for player 0
-  
-    // Deck holds one gold and one silver
-    testGame->deck[0][0] = gold;
-    testGame->deck[0][1] = silver; 
-    testGame->deckCount[0] = 2;
-
-
-    // Set up hand for player 0
-    j = 0;
-    while(j < 5)
-    {
-	// get cards from second half of card values
-	for(i = adventurer; i <= treasure_map; i++)
-        {
-	    testGame->hand[0][j] = i;
-            testGame->handCount[0]++;   
-            j++;
-            
-            if(j >= 5)
-            {
-		break;
-	    }
-        }
-    }
-
-    // Save a copy of this test struct
-    memcpy(testCopy->hand[0], testGame->hand[0], sizeof(testGame->hand[0]));
-    testCopy->handCount[0] = testGame->handCount[0];
-
-  
-    // call cardEffect
-    returnVal = cardEffect(card, 0, 0, 0, testGame, handPos, 0);
-  
-    // Check the restults of this test case
-    char* testCase2 = "adventurer effect with one gold and one silver in deck";
-
-    // Assert the hand count is one card more than before and return value is 0
-    assertHandCountReturnVal = assertTrue(testGame->handCount[0], testCopy->handCount[0] + 1, returnVal, 0);
-
-
-    // The new hand should have two treasure cards
-    treasureResult = checkForTreasure(testGame, testCopy);
-
-    // Assert that both halves of the test pass
-    if(assertTrue(assertHandCountReturnVal, 1, treasureResult, 1))
-    {
-	printResults(testCase2, 1);
-    }
-    else
-    {
-	printResults(testCase2, 0);
-    }
-
-    /* Test Case 3: deck holds one gold and one silver and one curse */
-    printf("\nadventurer Test Case 3\n"); 
-
-   // reset deck and card counts
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
- 
-    // Discard pile has valid cards
-    for(i = 0; i < 20; i++)
-    {
-	testGame->discard[0][i] = province; 
-        testGame->discardCount[0]++;
-    }
-
-
-
-    // Set up deck for player 0
-  
-    // Deck holds one gold and one silver and one curse
-    testGame->deck[0][0] = gold;
-    testGame->deck[0][1] = silver; 
-    testGame->deck[0][2] = curse;
-    testGame->deckCount[0] = 3;
-
-
-    // Set up hand for player 0
-
-    j = 0;
-    while(j < 5)
-    {
-	// get cards from second half of card values
-	for(i = adventurer; i <= treasure_map; i++)
-        {
-	    testGame->hand[0][j] = i;
-            testGame->handCount[0]++;   
-            j++;
-            
-            if(j >= 5)
-            {
-		break;
-	    }
-        }
-    }
-
-    // Save a copy of this test struct
-    memcpy(testCopy->hand[0], testGame->hand[0], sizeof(testGame->hand[0]));
-    testCopy->handCount[0] = testGame->handCount[0];
-  
-    // call cardEffect
-    returnVal = cardEffect(card, 0, 0, 0, testGame, handPos, 0);
-  
-    // Check the restults of this test case
-    char* testCase3 = "adventurer effect with one gold and one silver and one curse in deck";
-
-    // Assert the hand count is one card more than before and return value is 0
-    assertHandCountReturnVal = assertTrue(testGame->handCount[0], testCopy->handCount[0] + 1, returnVal, 0);
-
-
-    // The new hand should have two treasure cards
-    treasureResult = checkForTreasure(testGame, testCopy);
-
-    // Assert that both halves of the test pass
-    if(assertTrue(assertHandCountReturnVal, 1, treasureResult, 1))
-    {
-	printResults(testCase3, 1);
-    }
-    else
-    {
-	printResults(testCase3, 0);
-    }
-
-    /* Test Case 4: deck holds one gold */
-    printf("\nadventurer Test Case 4\n"); 
-
-   // reset deck and card counts
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
- 
-    // Discard pile has valid cards
-    for(i = 0; i < 20; i++)
-    {
-	testGame->discard[0][i] = province; 
-        testGame->discardCount[0]++;
-    }
-
-
-
-
-    // Set up deck for player 0
-  
-    // Deck holds one gold
-    testGame->deck[0][0] = gold;
-    testGame->deckCount[0] = 1;
-
-
-    j = 0;
-    while(j < 5)
-    {
-	// get cards from second half of card values
-	for(i = adventurer; i <= treasure_map; i++)
-        {
-	    testGame->hand[0][j] = i;
-            testGame->handCount[0]++;   
-            j++;
-            
-            if(j >= 5)
-            {
-		break;
-	    }
-        }
-    }
-
-    // Save a copy of this test struct
-    memcpy(testCopy->hand[0], testGame->hand[0], sizeof(testGame->hand[0]));
-    testCopy->handCount[0] = testGame->handCount[0];
-  
-    // call cardEffect
-    returnVal = cardEffect(card, 0, 0, 0, testGame, handPos, 0);
-  
-    // Check the restults of this test case
-    char* testCase4 = "adventurer effect with one gold in deck";
-
-    // Assert the hand count is one card more than before and return value is 0
-    assertHandCountReturnVal = assertTrue(testGame->handCount[0], testCopy->handCount[0] + 1, returnVal, 0);
-
-    // The new hand should have two treasure cards
-    treasureResult = checkForTreasure(testGame, testCopy);
-
-    // Assert that both halves of the test pass
-    if(assertTrue(assertHandCountReturnVal, 1, treasureResult, 1))
-    {
-	printResults(testCase4, 1);
-    }
-    else
-    {
-	printResults(testCase4, 0);
-    }
-
-    /* Test Case 5: deck holds one estate 
-    printf("\nadventurer Test Case 5\n"); 
-
-    // reset deck and card counts
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
- 
-    // Discard pile has valid cards
-    for(i = 0; i < 20; i++)
-    {
-	testGame->discard[0][i] = province; 
-        testGame->discardCount[0]++;
-    }
-
-    // Set up deck for player 0
-  
-    // Deck holds one estate
-    testGame->deck[0][0] = estate;
-    testGame->deckCount[0] = 1;
-
-    printf("Printing deck:\n");
-
-    // Set up hand for player 0
-    for(i=0; i < testGame->deckCount[0]; i++)
-    {
-	printf("testGame->deck[0][i]: %i\n", testGame->deck[0][i]);
-    }
-
-
-    j = 0;
-    while(j < 5)
-    {
-	// get cards from second half of card values
-	for(i = adventurer; i <= treasure_map; i++)
-        {
-	    testGame->hand[0][j] = i;
-            testGame->handCount[0]++;   
-            j++;
-            
-            if(j >= 5)
-            {
-		break;
-	    }
-        }
-    }
-
-    // Save a copy of this test struct
-    memcpy(testCopy->hand[0], testGame->hand[0], sizeof(testGame->hand[0]));
-    testCopy->handCount[0] = testGame->handCount[0];
- 
-    printf("printing hand before card effect:\n");
-    for(i=0; i < testGame->handCount[0]; i++)
-    {
-	printf("card: %i\n", testGame->hand[0][i]);
-    }
-  
-    // call cardEffect
-    returnVal = cardEffect(card, 0, 0, 0, testGame, handPos, 0);
-    printf("returnVal: %i\n", returnVal); 
-    printf("printing hand after card effect:\n");
-    for(i=0; i < testGame->handCount[0]; i++)
-    {
-	printf("card: %i\n", testGame->hand[0][i]);
-    }
-  
-    // Check the restults of this test case
-    char* testCase5 = "adventurer effect with one estate";
-
-    // Assert the hand count is one card more than before and return value is 0
-    assertHandCountReturnVal = assertTrue(testGame->handCount[0], testCopy->handCount[0] + 1, returnVal, 0);
-
-    printf("handCount before adventurer: %i, handCount after adventurer: %i, returnVal: %i\n", testCopy->handCount[0], testGame->handCount[0], returnVal);
-
-
-    // The new hand should have two treasure cards
-    treasureResult = checkForTreasure(testGame, testCopy);
-
-    printf("assertHandCountReturnVal: %i, treasureResult: %i\n", assertHandCountReturnVal, treasureResult);
-
-    // Assert that both halves of the test pass
-    if(assertTrue(assertHandCountReturnVal, 1, treasureResult, 1))
-    {
-	printResults(testCase5, 1);
-    }
-    else
-    {
-	printResults(testCase5, 0);
-    }
-*/
-
-    /* Test Case 6: deck holds 20 silver */
-    printf("\nadventurer Test Case 6\n"); 
-
-   // reset deck and card counts
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
- 
-    // Discard pile has valid cards
-    for(i = 0; i < 20; i++)
-    {
-	testGame->discard[0][i] = province; 
-        testGame->discardCount[0]++;
-    }
-
-
-
-
-    // Set up deck for player 0
-  
-    // Deck holds 10 silver
-    for(i=0; i < 10; i++)
-    {
-        testGame->deck[0][i] = silver;
-        testGame->deckCount[0]++;
-    }
-   
-
-
-    // Set up hand for player 0
-
-    j = 0;
-    while(j < 5)
-    {
-	// get cards from second half of card values
-	for(i = adventurer; i <= treasure_map; i++)
-        {
-	    testGame->hand[0][j] = i;
-            testGame->handCount[0]++;   
-            j++;
-            
-            if(j >= 5)
-            {
-		break;
-	    }
-        }
-    }
-
-    // Save a copy of this test struct
-    memcpy(testCopy->hand[0], testGame->hand[0], sizeof(testGame->hand[0]));
-    testCopy->handCount[0] = testGame->handCount[0];
- 
-    // call cardEffect
-    returnVal = cardEffect(card, 0, 0, 0, testGame, handPos, 0);
-   
-  
-    // Check the restults of this test case
-    char* testCase6 = "adventurer effect with 10 silver in deck";
-
-    // Assert the hand count is one card more than before and return value is 0
-    assertHandCountReturnVal = assertTrue(testGame->handCount[0], testCopy->handCount[0] + 1, returnVal, 0);
-
-    // The new hand should have two treasure cards
-    treasureResult = checkForTreasure(testGame, testCopy);
-
-    // Assert that both halves of the test pass
-    if(assertTrue(assertHandCountReturnVal, 1, treasureResult, 1))
-    {
-	printResults(testCase6, 1);
-    }
-    else
-    {
-	printResults(testCase6, 0);
-    }
-
-
-    /* Test Case 7: deck holds ten coppers and one silver */
-    printf("\nadventurer Test Case 7\n"); 
-
-   // reset deck and card counts
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
- 
-    // Discard pile has valid cards
-    for(i = 0; i < 20; i++)
-    {
-	testGame->discard[0][i] = province; 
-        testGame->discardCount[0]++;
-    }
-
-
-
-
-    // Set up deck for player 0
-  
-    // Deck holds 10 copper and 1 silver
-    for(i=0; i < 10; i++)
-    {
-        testGame->deck[0][i] = copper;
-        testGame->deckCount[0]++;
-    }
-    testGame->deck[0][10] = silver;
-    testGame->deckCount[0]++;
-
-
-    // Set up hand for player 0
-
-    j = 0;
-    while(j < 5)
-    {
-	// get cards from second half of card values
-	for(i = adventurer; i <= treasure_map; i++)
-        {
-	    testGame->hand[0][j] = i;
-            testGame->handCount[0]++;   
-            j++;
-            
-            if(j >= 5)
-            {
-		break;
-	    }
-        }
-    }
-
-    // Save a copy of this test struct
-    memcpy(testCopy->hand[0], testGame->hand[0], sizeof(testGame->hand[0]));
-    testCopy->handCount[0] = testGame->handCount[0];
-  
-    // call cardEffect
-    returnVal = cardEffect(card, 0, 0, 0, testGame, handPos, 0);
-  
-    // Check the restults of this test case
-    char* testCase7 = "adventurer effect with 10 copper and one silver in deck";
-
-    // Assert the hand count is one card more than before and return value is 0
-    assertHandCountReturnVal = assertTrue(testGame->handCount[0], testCopy->handCount[0] + 1, returnVal, 0);
-
-
-    // The new hand should have two treasure cards
-    treasureResult = checkForTreasure(testGame, testCopy);
-
-    // Assert that both halves of the test pass
-    if(assertTrue(assertHandCountReturnVal, 1, treasureResult, 1))
-    {
-	printResults(testCase7, 1);
-    }
-    else
-    {
-	printResults(testCase7, 0);
-    }
-
-
-
-
-}
-
-/******************************************************************************
- * Description: This is the main function. It calls testShuffle().
- * ***************************************************************************/
-
-int main(int argc, char *argv[])
-{
-    testAdventurer();
-    return 0;
-}

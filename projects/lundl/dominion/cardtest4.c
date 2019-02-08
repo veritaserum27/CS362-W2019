@@ -2,6 +2,7 @@
  * Author: Laura Lund, lundl@oregonstate.edu
  * Assignment: CS 362 Winter 2019, Assignment 3
  * Description: This is a unit test for the card salvager in dominion.c.
+ * Citation: The example given in the assignment: cardtest4.c
  * ***************************************************************************/
 #include "dominion.h"
 #include "dominion_helpers.h" 
@@ -12,6 +13,7 @@
 #include <time.h>
 #include <string.h>
 
+#define TESTCARD "salvager"
 /******************************************************************************
  * Name: printResults
  * Parameters: a char* holding a string to be printed, an int holding a test
@@ -25,1200 +27,1061 @@ void printResults(char* testCase, int assertResult)
 {
     if(assertResult == 0)
     {
-	printf("village: FAIL %s\n", testCase);
+	printf("    salvager: FAIL %s\n", testCase);
     }
     else
     {
-	printf("village: PASS %s\n", testCase);
+	printf("    salvager: PASS %s\n", testCase);
     }
 }
-
 
 /******************************************************************************
  * Name: assertTrue()
  * Parameters: four ints: one holding the actual value of the test result, 
- * 	one holding the expected value of the test result, one holding the 
- * 	actual return value of a call to the tested function, and one holding
- * 	the expected return value of a call to the tested function.
- * Description: This helper function compares actual values to expected values.
- * 	If the actual values match the expected values, return 1. Otherwise, 
+ * 	one holding the expected value of the test result
+ * Description: This helper function compares actual value to expected value.
+ * 	If the actual value matches the expected value, return 1. Otherwise, 
  * 	return 0.
- * Return Value: Returns 1 if the input values are "true." Returns 0 otherwise.
+ * Return Value: Returns 1 if the input values match "true." Returns 0 otherwise.
  * ***************************************************************************/
-int assertTrue(int actualVal, int expectedVal, int actualReturn, int expectedReturn)
+int assertTrue(int actualVal, int expectedVal)
 {
-    if((actualVal == expectedVal) && (actualReturn == expectedReturn))
+    if(actualVal == expectedVal)
     {
 	return 1;
     }
     return 0;
 }
 
-/******************************************************************************
- * Name: checkHand()
- * Parameters: a gameState struct pointer to a struct holding the result of
- * 	a call to cardEffect() and the value that should have been discarded
- * Description: This helper function checks whether or not the given card is in
- * 	the current hand.
- * Return Value: If the current hand holds this card, return 1. Otherwise, 
- * 	return 0.
- * ***************************************************************************/
-int checkHand(struct gameState* test, int card)
+int main()
 {
- 
-    int i;
-    for(i=0; i < test->handCount[0]; i++)
-    {
-       	// if this card is in this hand
-	if(test->hand[0][i] == card)
+    int newCards = 0; // salvager should return 0 new cards
+	int handCountComparison = 0; // 1 if handcount matches expected value
+	int discarded = 2; // the card played will be discarded, choice will be trashed
+	int buyIncrease = 1; // salvager should increase the buys by 1
+    int playedCardComp = 0; // 1 if played count matches expected value
+	int coinCountComp = 0; // 1 if coin count matches expected value
+	int buyComp = 0; // 1 if buy count matches expected value
+	int cardFound = 0; // 1 if card found in hand
+	
+	int numPlayers = 2;
+	int thisPlayer = 0;
+	int player1HandMatch = 1; // 0 if player 1's hand changes 
+	int player1DeckMatch = 1; // 0 if player 1's deck changes
+	int player1HandComp = 0; // 1 if matches expected value
+	int player1DeckComp = 0; // 1 if matches expected value
+	
+	int player2HandMatch = 1; // 0 if player 2's hand changes 
+	int player2DeckMatch = 1; // 0 if player 2's deck changes
+	int player2HandComp = 0; // 1 if matches expected value
+	int player2DeckComp = 0; // 1 if matches expected value
+	
+	int player3HandMatch = 1; // 0 if player 3's hand changes 
+	int player3DeckMatch = 1; // 0 if player 3's deck changes
+	int player3HandComp = 0; // 1 if matches expected value
+	int player3DeckComp = 0; // 1 if matches expected value
+	
+	int kingdomMatch = 1; // 0 if kingdom cards in states differ
+	int victoryMatch = 1; // 0 if victory cards in states differ
+	int kingdomComp = 0; // 1 if matches expected value
+	int victoryComp = 0; // 1 if matches expected value
+	
+    int handPos = 0, choice1 = 0, choice2 = 0, choice3 = 0, bonus = 0;
+	int choiceVal = 0;
+	int i;
+    int seed = 1000; // needed for game initialization
+
+    // This the the state of the game that will be sent to salvager
+    struct gameState testGame;
+	
+	// This is the state of the game that will be used to preserve the original state
+	struct gameState originalGame;
+	
+	// Kingdom cards in play
+	int k[10] = {adventurer, embargo, smithy, minion, mine, cutpurse, sea_hag,
+		tribute, baron, council_room};
+	
+	// initialize game state and player cards
+	initializeGame(numPlayers, k, seed, &originalGame); 
+    
+	// Put salvager in the last hand position for this player
+	// Set player's hand
+	originalGame.hand[thisPlayer][0] = province; // cost 8
+	originalGame.hand[thisPlayer][1] = estate; // cost 2
+	originalGame.hand[thisPlayer][2] = copper; // cost 0
+	originalGame.hand[thisPlayer][3] = council_room; // cost 5
+	originalGame.hand[thisPlayer][4] = gardens; // cost 4
+	originalGame.hand[thisPlayer][5] = village; // cost 3
+	originalGame.hand[thisPlayer][6] = salvager; 
+	originalGame.handCount[0] = 7;
+	handPos = 6;
+	choice1 = 5;
+	choiceVal = 3;
+	
+	printf("---------- Testing Card: %s ----------\n", TESTCARD);
+	
+	// ----- Test 1: hand count of 7, salvager in pos 6, 2 players -----
+	printf("-----Test 1: hand count of 7, salvager in pos 6, 2 players-----\n");
+	printf("-----choice card: village, cost: 3, position: 5-----\n");	
+	// Copy game into test
+	memcpy(&testGame, &originalGame, sizeof(struct gameState));
+	
+	cardEffect(salvager, choice1, choice2, choice3, &testGame, handPos, &bonus);
+	
+	// hand count should be -2 of original hand count
+	// assert that the above is true
+	handCountComparison = assertTrue(testGame.handCount[thisPlayer], 
+		originalGame.handCount[thisPlayer] + newCards - discarded);
+		
+	// Print result
+	printResults("-2 cards in hand count", handCountComparison);
+	if(handCountComparison == 0)
 	{
-	    return 1;
+		printf("        hand count: %i, expected: %i\n", 
+			testGame.handCount[thisPlayer], originalGame.handCount[thisPlayer] 
+			+ newCards - discarded);	
 	}
-    }
-    return 0;
-}
-
-
-/******************************************************************************
- * Name: checkPlayedPile()
- * Parameters: a gameState struct pointer to a struct holding the result of
- * 	a call to cardEffect() and a card value
- * Description: This helper function checks whether or not the given card is in
- * 	the played pile.
- * Return Value: If the played pile holds this card, return 1. Otherwise, 
- * 	return 0.
- * ***************************************************************************/
-int checkPlayedPile(struct gameState* test, int card)
-{
- 
-    int i;
-    for(i=0; i < test->playedCardCount; i++)
-    {
-  	// if this card is in the played pile
-	if(test->playedCards[i] == card)
+	
+	// played cards should increase by 1
+	// assert that the above is true
+	playedCardComp = assertTrue(testGame.playedCardCount, 
+		originalGame.playedCardCount + 1);
+	
+	// print result
+	printResults("+1 played cards", playedCardComp);
+	if(playedCardComp == 0)
 	{
-	    return 1;
+		printf("     played count: %i, expected: %i\n", testGame.playedCardCount, 
+			originalGame.playedCardCount + 1);	
 	}
-    }
-    return 0;
+	
+	// coin count should increase by cost of choice card
+	// assert that the above is true
+	coinCountComp = assertTrue(testGame.coins, originalGame.coins + choiceVal);
+	
+	printResults("+cost of choice card added to coin count", coinCountComp);
+	if(coinCountComp == 0)
+	{
+		printf("        coin count: %i, expected: %i\n", testGame.coins, 
+			originalGame.coins + choiceVal);
+	}
+	
+	// buys should increase by 1
+	buyComp = assertTrue(testGame.numBuys, originalGame.numBuys + buyIncrease);
+	
+	// print results
+	printResults("+1 buy count", buyComp);
+	if(buyComp == 0)
+	{
+		printf("     buy count: %i, expected: %i\n", testGame.numBuys, 
+			originalGame.numBuys + buyIncrease);    
+	}
+	
+	
+
+	
+	// The states of other players should not change. 
+	// Check hand and deck of other players.
+	// Check hand
+	for (i=0; i < originalGame.handCount[1]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[1][i] != testGame.hand[1][i])
+		{
+			// this player had a change in their hand
+			player1HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[1]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[1][i] != testGame.deck[1][i])
+		{
+			// this player had a change in their hand
+			player1DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player1HandComp = assertTrue(player1HandMatch, 1);
+	
+	// print result
+	printResults("player 1's hand unchanged", player1HandComp);
+	
+	// Assert that the other player's deck did not change
+	player1DeckComp = assertTrue(player1DeckMatch, 1);
+	
+	// print result
+	printResults("player 1's deck unchanged", player1DeckComp);
+	
+
+	// Salvager should not be in hand
+	for(i = 0; i < testGame.handCount[thisPlayer]; i++)
+	{
+		if(testGame.hand[thisPlayer][i] == salvager)
+		{
+			cardFound = 1;
+			handPos = i;
+		}
+	}
+	
+	if(cardFound)
+	{
+		printResults("salvager not in hand", 0);
+	}
+	else
+	{
+		printResults("salvager not in hand", 1);
+	}
+	
+	// kingdom and victory cards should not change
+	// kingdom cards
+	for(i = 0; i < sizeof(k); i++)
+	{
+		// if the kingdom cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[k[i]] != testGame.supplyCount[k[i]])
+		{
+			printf("kingdom card %i is different at %i\n", k[i], i);
+			kingdomMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in kingdom cards
+	kingdomComp = assertTrue(kingdomMatch, 1);
+	
+	printResults("kingdom cards unchanged", kingdomComp);
+	
+	// victory cards
+	for(i = estate; i <= province; i++)
+	{
+		// if the victory cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[i] != testGame.supplyCount[i])
+		{
+			printf("victory card %i is different\n", i);
+			victoryMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in victory cards
+	victoryComp = assertTrue(victoryMatch, 1);
+	
+	printResults("victory cards unchanged", victoryComp);
+
+	
+	// ----- Test 2: hand count of 7, salvager in pos 6, 2 players -----
+	printf("\n-----Test 2: hand count of 7, salvager in pos 6, 2 players-----\n");
+	printf("-----choice card: province, cost: 8, position: 0-----\n");	
+	
+	// Put salvager in the last hand position for this player
+	// Set player's hand
+	originalGame.hand[thisPlayer][0] = province; // cost 8
+	originalGame.hand[thisPlayer][1] = estate; // cost 2
+	originalGame.hand[thisPlayer][2] = copper; // cost 0
+	originalGame.hand[thisPlayer][3] = council_room; // cost 5
+	originalGame.hand[thisPlayer][4] = gardens; // cost 4
+	originalGame.hand[thisPlayer][5] = village; // cost 3
+	originalGame.hand[thisPlayer][6] = salvager; 
+	originalGame.handCount[0] = 7;
+	handPos = 6;
+	choice1 = 0;
+	choiceVal = 8;
+	
+	// Copy game into test
+	memcpy(&testGame, &originalGame, sizeof(struct gameState));
+	
+	cardEffect(salvager, choice1, choice2, choice3, &testGame, handPos, &bonus);
+	
+	// hand count should be -2 of original hand count
+	// assert that the above is true
+	handCountComparison = assertTrue(testGame.handCount[thisPlayer], 
+		originalGame.handCount[thisPlayer] + newCards - discarded);
+		
+	// Print result
+	printResults("-2 cards in hand count", handCountComparison);
+	if(handCountComparison == 0)
+	{
+		printf("        hand count: %i, expected: %i\n", 
+			testGame.handCount[thisPlayer], originalGame.handCount[thisPlayer] 
+			+ newCards - discarded);	
+	}
+	
+	// played cards should increase by 1
+	// assert that the above is true
+	playedCardComp = assertTrue(testGame.playedCardCount, 
+		originalGame.playedCardCount + 1);
+	
+	// print result
+	printResults("+1 played cards", playedCardComp);
+	if(playedCardComp == 0)
+	{
+		printf("     played count: %i, expected: %i\n", testGame.playedCardCount, 
+			originalGame.playedCardCount + 1);	
+	}
+	
+	// coin count should increase by cost of choice card
+	// assert that the above is true
+	coinCountComp = assertTrue(testGame.coins, originalGame.coins + choiceVal);
+	
+	printResults("+cost of choice card added to coin count", coinCountComp);
+	if(coinCountComp == 0)
+	{
+		printf("        coin count: %i, expected: %i\n", testGame.coins, 
+			originalGame.coins + choiceVal);
+	}
+	
+	// buys should increase by 1
+	buyComp = assertTrue(testGame.numBuys, originalGame.numBuys + buyIncrease);
+	
+	// print results
+	printResults("+1 buy count", buyComp);
+	if(buyComp == 0)
+	{
+		printf("     buy count: %i, expected: %i\n", testGame.numBuys, 
+			originalGame.numBuys + buyIncrease);    
+	}
+	
+	// The states of other players should not change. 
+	// Check hand and deck of other players.
+	// Check hand
+	for (i=0; i < originalGame.handCount[1]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[1][i] != testGame.hand[1][i])
+		{
+			// this player had a change in their hand
+			player1HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[1]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[1][i] != testGame.deck[1][i])
+		{
+			// this player had a change in their hand
+			player1DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player1HandComp = assertTrue(player1HandMatch, 1);
+	
+	// print result
+	printResults("player 1's hand unchanged", player1HandComp);
+	
+	// Assert that the other player's deck did not change
+	player1DeckComp = assertTrue(player1DeckMatch, 1);
+	
+	// print result
+	printResults("player 1's deck unchanged", player1DeckComp);
+	
+	// Salvager should not be in hand
+	for(i = 0; i < testGame.handCount[thisPlayer]; i++)
+	{
+		if(testGame.hand[thisPlayer][i] == salvager)
+		{
+			cardFound = 1;
+			handPos = i;
+		}
+	}
+	
+	if(cardFound)
+	{
+		printResults("salvager not in hand", 0);
+	}
+	else
+	{
+		printResults("salvager not in hand", 1);
+	}
+	
+
+	// kingdom and victory cards should not change
+	// kingdom cards
+	for(i = 0; i < sizeof(k); i++)
+	{
+		// if the kingdom cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[k[i]] != testGame.supplyCount[k[i]])
+		{
+			printf("kingdom card %i is different at %i\n", k[i], i);
+			kingdomMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in kingdom cards
+	kingdomComp = assertTrue(kingdomMatch, 1);
+	
+	printResults("kingdom cards unchanged", kingdomComp);
+	
+	// victory cards
+	for(i = estate; i <= province; i++)
+	{
+		// if the victory cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[i] != testGame.supplyCount[i])
+		{
+			printf("victory card %i is different\n", i);
+			victoryMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in victory cards
+	victoryComp = assertTrue(victoryMatch, 1);
+	
+	printResults("victory cards unchanged", victoryComp);
+	
+	// ----- Test 3: hand count of 7, salvager in pos 0, 2 players -----
+	printf("\n-----Test 3: hand count of 7, salvager in pos 0, 2 players-----\n");
+	printf("-----choice card: estate, cost: 2, position: 1-----\n");	
+	
+	// Put salvager in the first hand position for this player
+	// Set player's hand
+	originalGame.hand[thisPlayer][6] = province; // cost 8
+	originalGame.hand[thisPlayer][1] = estate; // cost 2
+	originalGame.hand[thisPlayer][2] = copper; // cost 0
+	originalGame.hand[thisPlayer][3] = council_room; // cost 5
+	originalGame.hand[thisPlayer][4] = gardens; // cost 4
+	originalGame.hand[thisPlayer][5] = village; // cost 3
+	originalGame.hand[thisPlayer][0] = salvager; 
+	originalGame.handCount[0] = 7;
+	handPos = 0;
+	choice1 = 1;
+	choiceVal = 2;
+	
+	// Copy game into test
+	memcpy(&testGame, &originalGame, sizeof(struct gameState));
+	
+	cardEffect(salvager, choice1, choice2, choice3, &testGame, handPos, &bonus);
+	
+	// hand count should be -2 of original hand count
+	// assert that the above is true
+	handCountComparison = assertTrue(testGame.handCount[thisPlayer], 
+		originalGame.handCount[thisPlayer] + newCards - discarded);
+		
+	// Print result
+	printResults("-2 cards in hand count", handCountComparison);
+	if(handCountComparison == 0)
+	{
+		printf("        hand count: %i, expected: %i\n", 
+			testGame.handCount[thisPlayer], originalGame.handCount[thisPlayer] 
+			+ newCards - discarded);	
+	}
+	
+	// played cards should increase by 1
+	// assert that the above is true
+	playedCardComp = assertTrue(testGame.playedCardCount, 
+		originalGame.playedCardCount + 1);
+	
+	// print result
+	printResults("+1 played cards", playedCardComp);
+	if(playedCardComp == 0)
+	{
+		printf("     played count: %i, expected: %i\n", testGame.playedCardCount, 
+			originalGame.playedCardCount + 1);	
+	}
+	
+	// coin count should increase by cost of choice card
+	// assert that the above is true
+	coinCountComp = assertTrue(testGame.coins, originalGame.coins + choiceVal);
+	
+	printResults("+cost of choice card added to coin count", coinCountComp);
+	if(coinCountComp == 0)
+	{
+		printf("        coin count: %i, expected: %i\n", testGame.coins, 
+			originalGame.coins + choiceVal);
+	}
+	
+	// buys should increase by 1
+	buyComp = assertTrue(testGame.numBuys, originalGame.numBuys + buyIncrease);
+	
+	// print results
+	printResults("+1 buy count", buyComp);
+	if(buyComp == 0)
+	{
+		printf("     buy count: %i, expected: %i\n", testGame.numBuys, 
+			originalGame.numBuys + buyIncrease);    
+	}
+	
+	// The states of other players should not change. 
+	// Check hand and deck of other players.
+	// Check hand
+	for (i=0; i < originalGame.handCount[1]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[1][i] != testGame.hand[1][i])
+		{
+			// this player had a change in their hand
+			player1HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[1]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[1][i] != testGame.deck[1][i])
+		{
+			// this player had a change in their hand
+			player1DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player1HandComp = assertTrue(player1HandMatch, 1);
+	
+	// print result
+	printResults("player 1's hand unchanged", player1HandComp);
+	
+	// Assert that the other player's deck did not change
+	player1DeckComp = assertTrue(player1DeckMatch, 1);
+	
+	// print result
+	printResults("player 1's deck unchanged", player1DeckComp);
+	
+	// Salvager should not be in hand
+	for(i = 0; i < testGame.handCount[thisPlayer]; i++)
+	{
+		if(testGame.hand[thisPlayer][i] == salvager)
+		{
+			cardFound = 1;
+			handPos = i;
+		}
+	}
+	
+	if(cardFound)
+	{
+		printResults("salvager not in hand", 0);
+	}
+	else
+	{
+		printResults("salvager not in hand", 1);
+	}
+	
+
+	// kingdom and victory cards should not change
+	// kingdom cards
+	for(i = 0; i < sizeof(k); i++)
+	{
+		// if the kingdom cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[k[i]] != testGame.supplyCount[k[i]])
+		{
+			printf("kingdom card %i is different at %i\n", k[i], i);
+			kingdomMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in kingdom cards
+	kingdomComp = assertTrue(kingdomMatch, 1);
+	
+	printResults("kingdom cards unchanged", kingdomComp);
+	
+	// victory cards
+	for(i = estate; i <= province; i++)
+	{
+		// if the victory cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[i] != testGame.supplyCount[i])
+		{
+			printf("victory card %i is different\n", i);
+			victoryMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in victory cards
+	victoryComp = assertTrue(victoryMatch, 1);
+	
+	printResults("victory cards unchanged", victoryComp);
+	
+	// ----- Test 4: hand count of 7, salvager in pos 0, 3 players -----
+	printf("\n-----Test 4: hand count of 7, salvager in pos 0, 3 players-----\n");
+	printf("-----choice card: estate, cost: 2, position: 1-----\n");	
+	
+	// reinitialize game for 3 players
+	numPlayers = 3;
+	initializeGame(numPlayers, k, seed, &originalGame); 
+	
+	// Put salvager in the first hand position for this player
+	// Set player's hand
+	originalGame.hand[thisPlayer][6] = province; // cost 8
+	originalGame.hand[thisPlayer][1] = estate; // cost 2
+	originalGame.hand[thisPlayer][2] = copper; // cost 0
+	originalGame.hand[thisPlayer][3] = council_room; // cost 5
+	originalGame.hand[thisPlayer][4] = gardens; // cost 4
+	originalGame.hand[thisPlayer][5] = village; // cost 3
+	originalGame.hand[thisPlayer][0] = salvager; 
+	originalGame.handCount[0] = 7;
+	handPos = 0;
+	choice1 = 1;
+	choiceVal = 2;
+	
+	// Copy game into test
+	memcpy(&testGame, &originalGame, sizeof(struct gameState));
+	
+	cardEffect(salvager, choice1, choice2, choice3, &testGame, handPos, &bonus);
+	
+	// hand count should be -2 of original hand count
+	// assert that the above is true
+	handCountComparison = assertTrue(testGame.handCount[thisPlayer], 
+		originalGame.handCount[thisPlayer] + newCards - discarded);
+		
+	// Print result
+	printResults("-2 cards in hand count", handCountComparison);
+	if(handCountComparison == 0)
+	{
+		printf("        hand count: %i, expected: %i\n", 
+			testGame.handCount[thisPlayer], originalGame.handCount[thisPlayer] 
+			+ newCards - discarded);	
+	}
+	
+	// played cards should increase by 1
+	// assert that the above is true
+	playedCardComp = assertTrue(testGame.playedCardCount, 
+		originalGame.playedCardCount + 1);
+	
+	// print result
+	printResults("+1 played cards", playedCardComp);
+	if(playedCardComp == 0)
+	{
+		printf("     played count: %i, expected: %i\n", testGame.playedCardCount, 
+			originalGame.playedCardCount + 1);	
+	}
+	
+	// coin count should increase by cost of choice card
+	// assert that the above is true
+	coinCountComp = assertTrue(testGame.coins, originalGame.coins + choiceVal);
+	
+	printResults("+cost of choice card added to coin count", coinCountComp);
+	if(coinCountComp == 0)
+	{
+		printf("        coin count: %i, expected: %i\n", testGame.coins, 
+			originalGame.coins + choiceVal);
+	}
+	
+	// buys should increase by 1
+	buyComp = assertTrue(testGame.numBuys, originalGame.numBuys + buyIncrease);
+	
+	// print results
+	printResults("+1 buy count", buyComp);
+	if(buyComp == 0)
+	{
+		printf("     buy count: %i, expected: %i\n", testGame.numBuys, 
+			originalGame.numBuys + buyIncrease);    
+	}
+	
+	// The states of other players should not change. 
+	// Check hand, deck of other players
+	// Check hand
+	for (i=0; i < originalGame.handCount[1]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[1][i] != testGame.hand[1][i])
+		{
+			// this player had a change in their hand
+			player1HandMatch = 0;
+			break;
+		}
+	}
+	
+	// check deck
+	for (i=0; i < originalGame.deckCount[1]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[1][i] != testGame.deck[1][i])
+		{
+			// this player had a change in their hand
+			player1DeckMatch = 0;
+			break;
+		}
+	}
+	
+
+	
+	// Assert that the other player's hand did not change
+	player1HandComp = assertTrue(player1HandMatch, 1);
+	
+	// print result
+	printResults("player 1's hand unchanged", player1HandComp);
+	
+	// Assert that the other player's deck did not change
+	player1DeckComp = assertTrue(player1DeckMatch, 1);
+	
+	// print result
+	printResults("player 1's deck unchanged", player1DeckComp);
+	
+	// Player 2
+	// Check hand
+	for (i=0; i < originalGame.handCount[2]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[2][i] != testGame.hand[2][i])
+		{
+			// this player had a change in their hand
+			player2HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[2]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[2][i] != testGame.deck[2][i])
+		{
+			// this player had a change in their hand
+			player2DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player2HandComp = assertTrue(player2HandMatch, 1);
+	
+	// print result
+	printResults("player 2's hand unchanged", player2HandComp);
+	
+	// Assert that the other player's deck did not change
+	player2DeckComp = assertTrue(player2DeckMatch, 1);
+	
+	// print result
+	printResults("player 2's deck unchanged", player2DeckComp);
+	
+	
+	
+	// Salvager should not be in hand
+	for(i = 0; i < testGame.handCount[thisPlayer]; i++)
+	{
+		if(testGame.hand[thisPlayer][i] == salvager)
+		{
+			cardFound = 1;
+			handPos = i;
+		}
+	}
+	
+	if(cardFound)
+	{
+		printResults("salvager not in hand", 0);
+	}
+	else
+	{
+		printResults("salvager not in hand", 1);
+	}
+	
+
+	// kingdom and victory cards should not change
+	// kingdom cards
+	for(i = 0; i < sizeof(k); i++)
+	{
+		// if the kingdom cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[k[i]] != testGame.supplyCount[k[i]])
+		{
+			printf("kingdom card %i is different at %i\n", k[i], i);
+			kingdomMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in kingdom cards
+	kingdomComp = assertTrue(kingdomMatch, 1);
+	
+	printResults("kingdom cards unchanged", kingdomComp);
+	
+	// victory cards
+	for(i = estate; i <= province; i++)
+	{
+		// if the victory cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[i] != testGame.supplyCount[i])
+		{
+			printf("victory card %i is different\n", i);
+			victoryMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in victory cards
+	victoryComp = assertTrue(victoryMatch, 1);
+	
+	printResults("victory cards unchanged", victoryComp);
+	
+	// ----- Test 5: hand count of 7, salvager in pos 0, 4 players -----
+	printf("\n-----Test 5: hand count of 7, salvager in pos 0, 4 players-----\n");
+	printf("-----choice card: estate, cost: 2, position: 1-----\n");	
+	
+	// reinitialize game for 4 players
+	numPlayers = 4;
+	initializeGame(numPlayers, k, seed, &originalGame); 
+	
+	// Put salvager in the first hand position for this player
+	// Set player's hand
+	originalGame.hand[thisPlayer][6] = province; // cost 8
+	originalGame.hand[thisPlayer][1] = estate; // cost 2
+	originalGame.hand[thisPlayer][2] = copper; // cost 0
+	originalGame.hand[thisPlayer][3] = council_room; // cost 5
+	originalGame.hand[thisPlayer][4] = gardens; // cost 4
+	originalGame.hand[thisPlayer][5] = village; // cost 3
+	originalGame.hand[thisPlayer][0] = salvager; 
+	originalGame.handCount[0] = 7;
+	handPos = 0;
+	choice1 = 1;
+	choiceVal = 2;
+	
+	// Copy game into test
+	memcpy(&testGame, &originalGame, sizeof(struct gameState));
+	
+	cardEffect(salvager, choice1, choice2, choice3, &testGame, handPos, &bonus);
+	
+	// hand count should be -2 of original hand count
+	// assert that the above is true
+	handCountComparison = assertTrue(testGame.handCount[thisPlayer], 
+		originalGame.handCount[thisPlayer] + newCards - discarded);
+		
+	// Print result
+	printResults("-2 cards in hand count", handCountComparison);
+	if(handCountComparison == 0)
+	{
+		printf("        hand count: %i, expected: %i\n", 
+			testGame.handCount[thisPlayer], originalGame.handCount[thisPlayer] 
+			+ newCards - discarded);	
+	}
+	
+	// played cards should increase by 1
+	// assert that the above is true
+	playedCardComp = assertTrue(testGame.playedCardCount, 
+		originalGame.playedCardCount + 1);
+	
+	// print result
+	printResults("+1 played cards", playedCardComp);
+	if(playedCardComp == 0)
+	{
+		printf("     played count: %i, expected: %i\n", testGame.playedCardCount, 
+			originalGame.playedCardCount + 1);	
+	}
+	
+	// coin count should increase by cost of choice card
+	// assert that the above is true
+	coinCountComp = assertTrue(testGame.coins, originalGame.coins + choiceVal);
+	
+	printResults("+cost of choice card added to coin count", coinCountComp);
+	if(coinCountComp == 0)
+	{
+		printf("        coin count: %i, expected: %i\n", testGame.coins, 
+			originalGame.coins + choiceVal);
+	}
+	
+	// buys should increase by 1
+	buyComp = assertTrue(testGame.numBuys, originalGame.numBuys + buyIncrease);
+	
+	// print results
+	printResults("+1 buy count", buyComp);
+	if(buyComp == 0)
+	{
+		printf("     buy count: %i, expected: %i\n", testGame.numBuys, 
+			originalGame.numBuys + buyIncrease);    
+	}
+	
+	// The states of other players should not change. 
+	// Check hand, deck of other players
+	// Check hand
+	for (i=0; i < originalGame.handCount[1]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[1][i] != testGame.hand[1][i])
+		{
+			// this player had a change in their hand
+			player1HandMatch = 0;
+			break;
+		}
+	}
+	
+	// check deck
+	for (i=0; i < originalGame.deckCount[1]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[1][i] != testGame.deck[1][i])
+		{
+			// this player had a change in their hand
+			player1DeckMatch = 0;
+			break;
+		}
+	}
+	
+
+	
+	// Assert that the other player's hand did not change
+	player1HandComp = assertTrue(player1HandMatch, 1);
+	
+	// print result
+	printResults("player 1's hand unchanged", player1HandComp);
+	
+	// Assert that the other player's deck did not change
+	player1DeckComp = assertTrue(player1DeckMatch, 1);
+	
+	// print result
+	printResults("player 1's deck unchanged", player1DeckComp);
+	
+	// Player 2
+	// Check hand
+	for (i=0; i < originalGame.handCount[2]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[2][i] != testGame.hand[2][i])
+		{
+			// this player had a change in their hand
+			player2HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[2]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[2][i] != testGame.deck[2][i])
+		{
+			// this player had a change in their hand
+			player2DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player2HandComp = assertTrue(player2HandMatch, 1);
+	
+	// print result
+	printResults("player 2's hand unchanged", player2HandComp);
+	
+	// Assert that the other player's deck did not change
+	player2DeckComp = assertTrue(player2DeckMatch, 1);
+	
+	// print result
+	printResults("player 2's deck unchanged", player2DeckComp);
+	
+	// Player 3
+	// Check hand
+	for (i=0; i < originalGame.handCount[3]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[3][i] != testGame.hand[3][i])
+		{
+			// this player had a change in their hand
+			player3HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[3]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[3][i] != testGame.deck[3][i])
+		{
+			// this player had a change in their hand
+			player3DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player3HandComp = assertTrue(player3HandMatch, 1);
+	
+	// print result
+	printResults("player 3's hand unchanged", player3HandComp);
+	
+	// Assert that the other player's deck did not change
+	player3DeckComp = assertTrue(player3DeckMatch, 1);
+	
+	// print result
+	printResults("player 3's deck unchanged", player3DeckComp);
+	
+	
+	// Salvager should not be in hand
+	for(i = 0; i < testGame.handCount[thisPlayer]; i++)
+	{
+		if(testGame.hand[thisPlayer][i] == salvager)
+		{
+			cardFound = 1;
+			handPos = i;
+		}
+	}
+	
+	if(cardFound)
+	{
+		printResults("salvager not in hand", 0);
+	}
+	else
+	{
+		printResults("salvager not in hand", 1);
+	}
+	
+
+	// kingdom and victory cards should not change
+	// kingdom cards
+	for(i = 0; i < sizeof(k); i++)
+	{
+		// if the kingdom cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[k[i]] != testGame.supplyCount[k[i]])
+		{
+			printf("kingdom card %i is different at %i\n", k[i], i);
+			kingdomMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in kingdom cards
+	kingdomComp = assertTrue(kingdomMatch, 1);
+	
+	printResults("kingdom cards unchanged", kingdomComp);
+	
+	// victory cards
+	for(i = estate; i <= province; i++)
+	{
+		// if the victory cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[i] != testGame.supplyCount[i])
+		{
+			printf("victory card %i is different\n", i);
+			victoryMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in victory cards
+	victoryComp = assertTrue(victoryMatch, 1);
+	
+	printResults("victory cards unchanged", victoryComp);
+	
+	printf("---------- Testing for %s complete. ----------\n", TESTCARD);
+	
+	return 0;
 }
 
-
-/******************************************************************************
- * Name: testSalvager()
- * Parameters: none
- * Description: This unit test checks whether calling cardEffect() with 
- * 	salvager as the card parameter causes the number of buys to increase by 
- *	1, a card chosen to be trashed (if any) increases the number of coins
- *	by the cost of the trashed card, the trashed card is not in the disacrd
- *	pile afterwared, and the salvager card is discarded from the hand.
- * Return Value: none
- * ***************************************************************************/
-
-void testSalvager()
-{
-    printf("\n\nUNIT TESTS FOR SALVAGER CARD EFFECT\n");
-    // Initialize a gameState struct with values we need for this test
-    struct gameState* testGame = newGame();
-    testGame->numPlayers = 2;
-
-    // set player 0 in whoseTurn
-    testGame->whoseTurn = 0;
-
-    // set card = salvager
-    int card = salvager;
-    int handPos = 0;
-
-    /* Test Case 1: 7 cards in hand, salvager in position 0, numBuys starts at 1, coins starts at 0, choice1 is province */
-    printf("salvager Test Case 1\n"); 
-  
-    // initialize deck and card counts and actions
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
-    testGame->playedCardCount = 0; 
-    testGame->numBuys = 1;
-    testGame->coins = 0;
-
-    // Set up deck for player 0
-    int i;
-    int j = 0;
-    // Deck holds card values curse and duchy, no salvager
-    for(i=curse; i <= duchy; i++)
-    {
-    	if(i != estate)
-	{
-            testGame->deck[0][j] = i;
-            testGame->deckCount[0] += 1;
-            j++;
-        }
-    }
- 
-    // Played pile has valid cards that aren't in hand or deck, no salvager
-    j = 0;
-    for(i = sea_hag; i <= treasure_map; i++)
-    {
-	testGame->playedCards[j] = i;
-	testGame->playedCardCount++; 
-        j++;
-    }
-
-
-    // Set up hand for player 0
-    // Cards in hand include salvager and cards not in deck or discard
-    handPos = 0;
-    testGame->hand[0][0] = salvager;
-    testGame->hand[0][1] = copper; // cost 0
-    testGame->hand[0][2] = province; // cost 8
-    testGame->hand[0][3] = council_room; // cost 5
-    testGame->hand[0][4] = gardens; // cost 4
-    testGame->hand[0][5] = estate; // cost 2
-    testGame->hand[0][6] = village; // cost 3
-    testGame->handCount[0] = 7;
-    int choicePos = 2; // province
-    int trashCard = province;
-    int choiceCost = 8;
-
-    // Save current hand count and action count
-    int handCountBefore = testGame->handCount[0];
-    int buyCountBefore = testGame->numBuys;
-    int coinCountBefore = testGame->coins;
-
-
-    // call cardEffect
-    int returnVal = cardEffect(card, choicePos, 0, 0, testGame, handPos, 0);
-   
-     
-    // Assert that the before handCount is the same as current handCount and that returnVal is 0
-    // Check the restults of this test case
-    char* testCase1 = "salvager effect with hand count of 7, salvager position of 0, buy count 1, coin count 0, province choice";
-
-    int assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore - 2, returnVal, 0);
-    //printf("returnVal: %i, handCount: %i, assertHandCountReturnVal: %i\n", returnVal, testGame->handCount[0], assertHandCountReturnVal);
-
-    // Verify that salvager is in played pile, should be 1
-    int playedPileResult = checkPlayedPile(testGame, salvager);
-    
-    // Verify that salvager is not in the hand, should be 0
-    int handResult = checkHand(testGame, salvager);
-
-    // Assert that salvager is found in discard pile and not found in hand
-    int assertSalvagerLocation = assertTrue(playedPileResult, 1, handResult, 0);
-
-    // printf("salvager played pile: %i, salvager hand: %i, assertSalvagerLocation: %i\n", playedPileResult, handResult, assertSalvagerLocation);
-
-    // Verify that the choice ard is not in the played pile, should be 0
-    int playedPileChoiceResult = checkPlayedPile(testGame, trashCard);
-
-    // Verify that the choice card is not in the hand, should be 0
-    int handChoiceResult = checkHand(testGame, trashCard);
-
-    // Assert that trash card is not in discard pile or hand
-    int assertTrashCard = assertTrue(playedPileChoiceResult, 0, handChoiceResult, 0);
-
-   // printf("trash discard pile: %i, trash hand: %i, assertTrashCard: %i\n", playedPileChoiceResult, handChoiceResult, assertTrashCard);
-
-    // Assert that after playing salvager, there is one more buy and choiceCost more coins
-    int assertBuyCoin = assertTrue(testGame->numBuys, buyCountBefore + 1, testGame->coins, coinCountBefore + choiceCost);
-
-   // printf("buycount: %i, coins: %i, assertBuyCoin: %i\n", testGame->numBuys, testGame->coins, assertBuyCoin);
- 
-    // Assert that all parts of the test pass
-    int assertPart1 = assertTrue(assertHandCountReturnVal, 1, assertSalvagerLocation, 1);
-    int assertPart2 = assertTrue(assertTrashCard, 1, assertBuyCoin, 1);
- 
-    // Assert that both halves of the test pass
-    if(assertTrue(assertPart1, 1, assertPart2, 1))
-    {
-	printResults(testCase1, 1);
-    }
-    else
-    {
-	printResults(testCase1, 0);
-    }
-
-    /* Test Case 2: 7 cards in hand, salvager in position 0, numBuys starts at 1, coins starts at 0, choice1 is copper */
-    printf("\nsalvager Test Case 2\n"); 
-  
-    // initialize deck and card counts and actions
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
-    testGame->playedCardCount = 0; 
-    testGame->numBuys = 1;
-    testGame->coins = 0;
-
-    // Set up deck for player 0
-    
-    j = 0;
-    // Deck holds card values curse and duchy, no salvager
-    for(i=curse; i <= duchy; i++)
-    {
-    	if(i != estate)
-	{
-            testGame->deck[0][j] = i;
-            testGame->deckCount[0] += 1;
-            j++;
-        }
-    }
- 
-    // Played pile has valid cards that aren't in hand or deck, no salvager
-    j = 0;
-    for(i = sea_hag; i <= treasure_map; i++)
-    {
-	testGame->playedCards[j] = i;
-	testGame->playedCardCount++; 
-        j++;
-    }
-
-
-    // Set up hand for player 0
-    // Cards in hand include salvager and cards not in deck or discard
-    handPos = 0;
-    testGame->hand[0][0] = salvager;
-    testGame->hand[0][1] = copper; // cost 0
-    testGame->hand[0][2] = province; // cost 8
-    testGame->hand[0][3] = council_room; // cost 5
-    testGame->hand[0][4] = gardens; // cost 4
-    testGame->hand[0][5] = estate; // cost 2
-    testGame->hand[0][6] = village; // cost 3
-    testGame->handCount[0] = 7;
-    choicePos = 1; // copper
-    trashCard = copper;
-    choiceCost = 0;
-
-    // Save current hand count and action count
-    handCountBefore = testGame->handCount[0];
-    buyCountBefore = testGame->numBuys;
-    coinCountBefore = testGame->coins;
-
-
-    // call cardEffect
-    returnVal = cardEffect(card, choicePos, 0, 0, testGame, handPos, 0);
-   
-     
-    // Assert that the before handCount is the same as current handCount and that returnVal is 0
-    // Check the restults of this test case
-    char* testCase2 = "salvager effect with hand count of 7, salvager position of 0, buy count 1, coin count 0, copper choice";
-
-    assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore - 2, returnVal, 0);
-
-    // Verify that salvager is in played pile, should be 1
-    playedPileResult = checkPlayedPile(testGame, salvager);
-    
-    // Verify that salvager is not in the hand, should be 0
-    handResult = checkHand(testGame, salvager);
-
-    // Assert that salvager is found in discard pile and not found in hand
-    assertSalvagerLocation = assertTrue(playedPileResult, 1, handResult, 0);
-
-    // Verify that the choice ard is not in the played pile, should be 0
-    playedPileChoiceResult = checkPlayedPile(testGame, trashCard);
-
-    // Verify that the choice card is not in the hand, should be 0
-    handChoiceResult = checkHand(testGame, trashCard);
-
-    // Assert that trash card is not in discard pile or hand
-    assertTrashCard = assertTrue(playedPileChoiceResult, 0, handChoiceResult, 0);
-
-    // Assert that after playing salvager, there is one more buy and choiceCost more coins
-    assertBuyCoin = assertTrue(testGame->numBuys, buyCountBefore + 1, testGame->coins, coinCountBefore + choiceCost);
-
-    // Assert that all parts of the test pass
-    assertPart1 = assertTrue(assertHandCountReturnVal, 1, assertSalvagerLocation, 1);
-    assertPart2 = assertTrue(assertTrashCard, 1, assertBuyCoin, 1);
- 
-    // Assert that both halves of the test pass
-    if(assertTrue(assertPart1, 1, assertPart2, 1))
-    {
-	printResults(testCase2, 1);
-    }
-    else
-    {
-	printResults(testCase2, 0);
-    }
-
-    /* Test Case 3: 7 cards in hand, salvager in position 0, numBuys starts at 1, coins starts at 0, choice1 is council room */
-    printf("\nsalvager Test Case 3\n"); 
-  
-    // initialize deck and card counts and actions
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
-    testGame->playedCardCount = 0; 
-    testGame->numBuys = 1;
-    testGame->coins = 0;
-
-    // Set up deck for player 0
-    
-    j = 0;
-    // Deck holds card values curse and duchy, no salvager
-    for(i=curse; i <= duchy; i++)
-    {
-    	if(i != estate)
-	{
-            testGame->deck[0][j] = i;
-            testGame->deckCount[0] += 1;
-            j++;
-        }
-    }
- 
-    // Played pile has valid cards that aren't in hand or deck, no salvager
-    j = 0;
-    for(i = sea_hag; i <= treasure_map; i++)
-    {
-	testGame->playedCards[j] = i;
-	testGame->playedCardCount++; 
-        j++;
-    }
-
-
-    // Set up hand for player 0
-    // Cards in hand include salvager and cards not in deck or discard
-    handPos = 0;
-    testGame->hand[0][0] = salvager;
-    testGame->hand[0][1] = copper; // cost 0
-    testGame->hand[0][2] = province; // cost 8
-    testGame->hand[0][3] = council_room; // cost 5
-    testGame->hand[0][4] = gardens; // cost 4
-    testGame->hand[0][5] = estate; // cost 2
-    testGame->hand[0][6] = village; // cost 3
-    testGame->handCount[0] = 7;
-    choicePos = 3; // council_room
-    trashCard = council_room;
-    choiceCost = 5;
-
-    // Save current hand count and action count
-    handCountBefore = testGame->handCount[0];
-    buyCountBefore = testGame->numBuys;
-    coinCountBefore = testGame->coins;
-
-
-    // call cardEffect
-    returnVal = cardEffect(card, choicePos, 0, 0, testGame, handPos, 0);
-   
-     
-    // Assert that the before handCount is the same as current handCount and that returnVal is 0
-    // Check the restults of this test case
-    char* testCase3 = "salvager effect with hand count of 7, salvager position of 0, buy count 1, coin count 0, council room choice";
-
-    assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore - 2, returnVal, 0);
-    // printf("returnVal: %i, handCount: %i, assertHandCountReturnVal: %i\n", returnVal, testGame->handCount[0], assertHandCountReturnVal);
-
-    // Verify that salvager is in played pile, should be 1
-    playedPileResult = checkPlayedPile(testGame, salvager);
-    
-    // Verify that salvager is not in the hand, should be 0
-    handResult = checkHand(testGame, salvager);
-
-    // Assert that salvager is found in discard pile and not found in hand
-    assertSalvagerLocation = assertTrue(playedPileResult, 1, handResult, 0);
-
-    // printf("salvager played pile: %i, salvager hand: %i, assertSalvagerLocation: %i\n", playedPileResult, handResult, assertSalvagerLocation);
-
-    // Verify that the choice ard is not in the played pile, should be 0
-    playedPileChoiceResult = checkPlayedPile(testGame, trashCard);
-
-    // Verify that the choice card is not in the hand, should be 0
-    handChoiceResult = checkHand(testGame, trashCard);
-
-    // Assert that trash card is not in discard pile or hand
-    assertTrashCard = assertTrue(playedPileChoiceResult, 0, handChoiceResult, 0);
-
-    // printf("trash discard pile: %i, trash hand: %i, assertTrashCard: %i\n", playedPileChoiceResult, handChoiceResult, assertTrashCard);
-
-    // Assert that after playing salvager, there is one more buy and choiceCost more coins
-    assertBuyCoin = assertTrue(testGame->numBuys, buyCountBefore + 1, testGame->coins, coinCountBefore + choiceCost);
-
-    // printf("buycount: %i, coins: %i, assertBuyCoin: %i\n", testGame->numBuys, testGame->coins, assertBuyCoin);
- 
-    // Assert that all parts of the test pass
-    assertPart1 = assertTrue(assertHandCountReturnVal, 1, assertSalvagerLocation, 1);
-    assertPart2 = assertTrue(assertTrashCard, 1, assertBuyCoin, 1);
- 
-    // Assert that both halves of the test pass
-    if(assertTrue(assertPart1, 1, assertPart2, 1))
-    {
-	printResults(testCase3, 1);
-    }
-    else
-    {
-	printResults(testCase3, 0);
-    }
-
-    /* Test Case 4: 7 cards in hand, salvager in position 0, numBuys starts at 1, coins starts at 0, choice1 is gardens*/
-    printf("\nsalvager Test Case 4\n"); 
-  
-    // initialize deck and card counts and actions
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
-    testGame->playedCardCount = 0; 
-    testGame->numBuys = 1;
-    testGame->coins = 0;
-
-    // Set up deck for player 0
-    
-    j = 0;
-    // Deck holds card values curse and duchy, no salvager
-    for(i=curse; i <= duchy; i++)
-    {
-    	if(i != estate)
-	{
-            testGame->deck[0][j] = i;
-            testGame->deckCount[0] += 1;
-            j++;
-        }
-    }
- 
-    // Played pile has valid cards that aren't in hand or deck, no salvager
-    j = 0;
-    for(i = sea_hag; i <= treasure_map; i++)
-    {
-	testGame->playedCards[j] = i;
-	testGame->playedCardCount++; 
-        j++;
-    }
-
-
-    // Set up hand for player 0
-    // Cards in hand include salvager and cards not in deck or discard
-    handPos = 0;
-    testGame->hand[0][0] = salvager;
-    testGame->hand[0][1] = copper; // cost 0
-    testGame->hand[0][2] = province; // cost 8
-    testGame->hand[0][3] = council_room; // cost 5
-    testGame->hand[0][4] = gardens; // cost 4
-    testGame->hand[0][5] = estate; // cost 2
-    testGame->hand[0][6] = village; // cost 3
-    testGame->handCount[0] = 7;
-    choicePos = 4; // gardens
-    trashCard = gardens;
-    choiceCost = 4;
-
-    // Save current hand count and action count
-    handCountBefore = testGame->handCount[0];
-    buyCountBefore = testGame->numBuys;
-    coinCountBefore = testGame->coins;
-
-
-    // call cardEffect
-    returnVal = cardEffect(card, choicePos, 0, 0, testGame, handPos, 0);
-   
-     
-    // Assert that the before handCount is the same as current handCount and that returnVal is 0
-    // Check the restults of this test case
-    char* testCase4 = "salvager effect with hand count of 7, salvager position of 0, buy count 1, coin count 0, gardens choice";
-
-    assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore - 2, returnVal, 0);
-    // printf("returnVal: %i, handCount: %i, assertHandCountReturnVal: %i\n", returnVal, testGame->handCount[0], assertHandCountReturnVal);
-
-    // Verify that salvager is in played pile, should be 1
-    playedPileResult = checkPlayedPile(testGame, salvager);
-    
-    // Verify that salvager is not in the hand, should be 0
-    handResult = checkHand(testGame, salvager);
-
-    // Assert that salvager is found in discard pile and not found in hand
-    assertSalvagerLocation = assertTrue(playedPileResult, 1, handResult, 0);
-
-    // printf("salvager played pile: %i, salvager hand: %i, assertSalvagerLocation: %i\n", playedPileResult, handResult, assertSalvagerLocation);
-
-    // Verify that the choice ard is not in the played pile, should be 0
-    playedPileChoiceResult = checkPlayedPile(testGame, trashCard);
-
-    // Verify that the choice card is not in the hand, should be 0
-    handChoiceResult = checkHand(testGame, trashCard);
-
-    // Assert that trash card is not in discard pile or hand
-    assertTrashCard = assertTrue(playedPileChoiceResult, 0, handChoiceResult, 0);
-
-    // printf("trash discard pile: %i, trash hand: %i, assertTrashCard: %i\n", playedPileChoiceResult, handChoiceResult, assertTrashCard);
-
-    // Assert that after playing salvager, there is one more buy and choiceCost more coins
-    assertBuyCoin = assertTrue(testGame->numBuys, buyCountBefore + 1, testGame->coins, coinCountBefore + choiceCost);
-
-    // printf("buycount: %i, coins: %i, assertBuyCoin: %i\n", testGame->numBuys, testGame->coins, assertBuyCoin);
- 
-    // Assert that all parts of the test pass
-    assertPart1 = assertTrue(assertHandCountReturnVal, 1, assertSalvagerLocation, 1);
-    assertPart2 = assertTrue(assertTrashCard, 1, assertBuyCoin, 1);
- 
-    // Assert that both halves of the test pass
-    if(assertTrue(assertPart1, 1, assertPart2, 1))
-    {
-	printResults(testCase4, 1);
-    }
-    else
-    {
-	printResults(testCase4, 0);
-    }
-
-
-    /* Test Case 5: 7 cards in hand, salvager in position 0, numBuys starts at 1, coins starts at 0, choice1 is estate */
-    printf("\nsalvager Test Case 5\n"); 
-  
-    // initialize deck and card counts and actions
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
-    testGame->playedCardCount = 0; 
-    testGame->numBuys = 1;
-    testGame->coins = 0;
-
-    // Set up deck for player 0
-    
-    j = 0;
-    // Deck holds card values curse and duchy, no salvager
-    for(i=curse; i <= duchy; i++)
-    {
-    	if(i != estate)
-	{
-            testGame->deck[0][j] = i;
-            testGame->deckCount[0] += 1;
-            j++;
-        }
-    }
- 
-    // Played pile has valid cards that aren't in hand or deck, no salvager
-    j = 0;
-    for(i = sea_hag; i <= treasure_map; i++)
-    {
-	testGame->playedCards[j] = i;
-	testGame->playedCardCount++; 
-        j++;
-    }
-
-
-    // Set up hand for player 0
-    // Cards in hand include salvager and cards not in deck or discard
-    handPos = 0;
-    testGame->hand[0][0] = salvager;
-    testGame->hand[0][1] = copper; // cost 0
-    testGame->hand[0][2] = province; // cost 8
-    testGame->hand[0][3] = council_room; // cost 5
-    testGame->hand[0][4] = gardens; // cost 4
-    testGame->hand[0][5] = estate; // cost 2
-    testGame->hand[0][6] = village; // cost 3
-    testGame->handCount[0] = 7;
-    choicePos = 5; // estate
-    trashCard = estate;
-    choiceCost = 2;
-
-    // Save current hand count and action count
-    handCountBefore = testGame->handCount[0];
-    buyCountBefore = testGame->numBuys;
-    coinCountBefore = testGame->coins;
-
-
-    // call cardEffect
-    returnVal = cardEffect(card, choicePos, 0, 0, testGame, handPos, 0);
-   
-     
-    // Assert that the before handCount is the same as current handCount and that returnVal is 0
-    // Check the restults of this test case
-    char* testCase5 = "salvager effect with hand count of 7, salvager position of 0, buy count 1, coin count 0, estate choice";
-
-    assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore - 2, returnVal, 0);
-    // printf("returnVal: %i, handCount: %i, assertHandCountReturnVal: %i\n", returnVal, testGame->handCount[0], assertHandCountReturnVal);
-
-    // Verify that salvager is in played pile, should be 1
-    playedPileResult = checkPlayedPile(testGame, salvager);
-    
-    // Verify that salvager is not in the hand, should be 0
-    handResult = checkHand(testGame, salvager);
-
-    // Assert that salvager is found in discard pile and not found in hand
-    assertSalvagerLocation = assertTrue(playedPileResult, 1, handResult, 0);
-
-    // printf("salvager played pile: %i, salvager hand: %i, assertSalvagerLocation: %i\n", playedPileResult, handResult, assertSalvagerLocation);
-
-    // Verify that the choice ard is not in the played pile, should be 0
-    playedPileChoiceResult = checkPlayedPile(testGame, trashCard);
-
-    // Verify that the choice card is not in the hand, should be 0
-    handChoiceResult = checkHand(testGame, trashCard);
-
-    // Assert that trash card is not in discard pile or hand
-    assertTrashCard = assertTrue(playedPileChoiceResult, 0, handChoiceResult, 0);
-
-    // printf("trash discard pile: %i, trash hand: %i, assertTrashCard: %i\n", playedPileChoiceResult, handChoiceResult, assertTrashCard);
-
-    // Assert that after playing salvager, there is one more buy and choiceCost more coins
-    assertBuyCoin = assertTrue(testGame->numBuys, buyCountBefore + 1, testGame->coins, coinCountBefore + choiceCost);
-
-    // printf("buycount: %i, coins: %i, assertBuyCoin: %i\n", testGame->numBuys, testGame->coins, assertBuyCoin);
- 
-    // Assert that all parts of the test pass
-    assertPart1 = assertTrue(assertHandCountReturnVal, 1, assertSalvagerLocation, 1);
-    assertPart2 = assertTrue(assertTrashCard, 1, assertBuyCoin, 1);
- 
-    // Assert that both halves of the test pass
-    if(assertTrue(assertPart1, 1, assertPart2, 1))
-    {
-	printResults(testCase5, 1);
-    }
-    else
-    {
-	printResults(testCase5, 0);
-    }
-
-   /* Test Case 6: 7 cards in hand, salvager in position 0, numBuys starts at 1, coins starts at 0, choice1 is village */
-    printf("\nsalvager Test Case 6\n"); 
-  
-    // initialize deck and card counts and actions
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
-    testGame->playedCardCount = 0; 
-    testGame->numBuys = 1;
-    testGame->coins = 0;
-
-    // Set up deck for player 0
-    
-    j = 0;
-    // Deck holds card values curse and duchy, no salvager
-    for(i=curse; i <= duchy; i++)
-    {
-    	if(i != estate)
-	{
-            testGame->deck[0][j] = i;
-            testGame->deckCount[0] += 1;
-            j++;
-        }
-    }
- 
-    // Played pile has valid cards that aren't in hand or deck, no salvager
-    j = 0;
-    for(i = sea_hag; i <= treasure_map; i++)
-    {
-	testGame->playedCards[j] = i;
-	testGame->playedCardCount++; 
-        j++;
-    }
-
-
-    // Set up hand for player 0
-    // Cards in hand include salvager and cards not in deck or discard
-    handPos = 0;
-    testGame->hand[0][0] = salvager;
-    testGame->hand[0][1] = copper; // cost 0
-    testGame->hand[0][2] = province; // cost 8
-    testGame->hand[0][3] = council_room; // cost 5
-    testGame->hand[0][4] = gardens; // cost 4
-    testGame->hand[0][5] = estate; // cost 2
-    testGame->hand[0][6] = village; // cost 3
-    testGame->handCount[0] = 7;
-    choicePos = 6; // village
-    trashCard = village;
-    choiceCost = 3;
-
-    // Save current hand count and action count
-    handCountBefore = testGame->handCount[0];
-    buyCountBefore = testGame->numBuys;
-    coinCountBefore = testGame->coins;
-
-
-    // call cardEffect
-    returnVal = cardEffect(card, choicePos, 0, 0, testGame, handPos, 0);
-   
-     
-    // Assert that the before handCount is the same as current handCount and that returnVal is 0
-    // Check the restults of this test case
-    char* testCase6 = "salvager effect with hand count of 7, salvager position of 0, buy count 1, coin count 0, village choice";
-
-    assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore - 2, returnVal, 0);
-    // printf("returnVal: %i, handCount: %i, assertHandCountReturnVal: %i\n", returnVal, testGame->handCount[0], assertHandCountReturnVal);
-
-    // Verify that salvager is in played pile, should be 1
-    playedPileResult = checkPlayedPile(testGame, salvager);
-    
-    // Verify that salvager is not in the hand, should be 0
-    handResult = checkHand(testGame, salvager);
-
-    // Assert that salvager is found in discard pile and not found in hand
-    assertSalvagerLocation = assertTrue(playedPileResult, 1, handResult, 0);
-
-    // printf("salvager played pile: %i, salvager hand: %i, assertSalvagerLocation: %i\n", playedPileResult, handResult, assertSalvagerLocation);
-
-    // Verify that the choice ard is not in the played pile, should be 0
-    playedPileChoiceResult = checkPlayedPile(testGame, trashCard);
-
-    // Verify that the choice card is not in the hand, should be 0
-    handChoiceResult = checkHand(testGame, trashCard);
-
-    // Assert that trash card is not in discard pile or hand
-    assertTrashCard = assertTrue(playedPileChoiceResult, 0, handChoiceResult, 0);
-
-    // printf("trash discard pile: %i, trash hand: %i, assertTrashCard: %i\n", playedPileChoiceResult, handChoiceResult, assertTrashCard);
-
-    // Assert that after playing salvager, there is one more buy and choiceCost more coins
-    assertBuyCoin = assertTrue(testGame->numBuys, buyCountBefore + 1, testGame->coins, coinCountBefore + choiceCost);
-
-    // printf("buycount: %i, coins: %i, assertBuyCoin: %i\n", testGame->numBuys, testGame->coins, assertBuyCoin);
- 
-    // Assert that all parts of the test pass
-    assertPart1 = assertTrue(assertHandCountReturnVal, 1, assertSalvagerLocation, 1);
-    assertPart2 = assertTrue(assertTrashCard, 1, assertBuyCoin, 1);
- 
-    // Assert that both halves of the test pass
-    if(assertTrue(assertPart1, 1, assertPart2, 1))
-    {
-	printResults(testCase6, 1);
-    }
-    else
-    {
-	printResults(testCase6, 0);
-    }
-
-
-   /* Test Case 7: 7 cards in hand, salvager in position 0, numBuys starts at 1, coins starts at 500, choice1 is village */
-    printf("\nsalvager Test Case 7\n"); 
-  
-    // initialize deck and card counts and actions
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
-    testGame->playedCardCount = 0; 
-    testGame->numBuys = 1;
-    testGame->coins = 500;
-
-    // Set up deck for player 0
-    
-    j = 0;
-    // Deck holds card values curse and duchy, no salvager
-    for(i=curse; i <= duchy; i++)
-    {
-    	if(i != estate)
-	{
-            testGame->deck[0][j] = i;
-            testGame->deckCount[0] += 1;
-            j++;
-        }
-    }
- 
-    // Played pile has valid cards that aren't in hand or deck, no salvager
-    j = 0;
-    for(i = sea_hag; i <= treasure_map; i++)
-    {
-	testGame->playedCards[j] = i;
-	testGame->playedCardCount++; 
-        j++;
-    }
-
-
-    // Set up hand for player 0
-    // Cards in hand include salvager and cards not in deck or discard
-    handPos = 0;
-    testGame->hand[0][0] = salvager;
-    testGame->hand[0][1] = copper; // cost 0
-    testGame->hand[0][2] = province; // cost 8
-    testGame->hand[0][3] = council_room; // cost 5
-    testGame->hand[0][4] = gardens; // cost 4
-    testGame->hand[0][5] = estate; // cost 2
-    testGame->hand[0][6] = village; // cost 3
-    testGame->handCount[0] = 7;
-    choicePos = 6; // village
-    trashCard = village;
-    choiceCost = 3;
-
-    // Save current hand count and action count
-    handCountBefore = testGame->handCount[0];
-    buyCountBefore = testGame->numBuys;
-    coinCountBefore = testGame->coins;
-
-
-    // call cardEffect
-    returnVal = cardEffect(card, choicePos, 0, 0, testGame, handPos, 0);
-   
-     
-    // Assert that the before handCount is the same as current handCount and that returnVal is 0
-    // Check the restults of this test case
-    char* testCase7 = "salvager effect with hand count of 7, salvager position of 0, buy count 1, coin count 500, village choice";
-
-    assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore - 2, returnVal, 0);
-    // printf("returnVal: %i, handCount: %i, assertHandCountReturnVal: %i\n", returnVal, testGame->handCount[0], assertHandCountReturnVal);
-
-    // Verify that salvager is in played pile, should be 1
-    playedPileResult = checkPlayedPile(testGame, salvager);
-    
-    // Verify that salvager is not in the hand, should be 0
-    handResult = checkHand(testGame, salvager);
-
-    // Assert that salvager is found in discard pile and not found in hand
-    assertSalvagerLocation = assertTrue(playedPileResult, 1, handResult, 0);
-
-    // printf("salvager played pile: %i, salvager hand: %i, assertSalvagerLocation: %i\n", playedPileResult, handResult, assertSalvagerLocation);
-
-    // Verify that the choice ard is not in the played pile, should be 0
-    playedPileChoiceResult = checkPlayedPile(testGame, trashCard);
-
-    // Verify that the choice card is not in the hand, should be 0
-    handChoiceResult = checkHand(testGame, trashCard);
-
-    // Assert that trash card is not in discard pile or hand
-    assertTrashCard = assertTrue(playedPileChoiceResult, 0, handChoiceResult, 0);
-
-    // printf("trash discard pile: %i, trash hand: %i, assertTrashCard: %i\n", playedPileChoiceResult, handChoiceResult, assertTrashCard);
-
-    // Assert that after playing salvager, there is one more buy and choiceCost more coins
-    assertBuyCoin = assertTrue(testGame->numBuys, buyCountBefore + 1, testGame->coins, coinCountBefore + choiceCost);
-
-    // printf("buycount: %i, coins: %i, assertBuyCoin: %i\n", testGame->numBuys, testGame->coins, assertBuyCoin);
- 
-    // Assert that all parts of the test pass
-    assertPart1 = assertTrue(assertHandCountReturnVal, 1, assertSalvagerLocation, 1);
-    assertPart2 = assertTrue(assertTrashCard, 1, assertBuyCoin, 1);
- 
-    // Assert that both halves of the test pass
-    if(assertTrue(assertPart1, 1, assertPart2, 1))
-    {
-	printResults(testCase7, 1);
-    }
-    else
-    {
-	printResults(testCase7, 0);
-    }
-
-
-   /* Test Case 8: 7 cards in hand, salvager in position 0, numBuys starts at 333, coins starts at 500, choice1 is village */
-    printf("\nsalvager Test Case 8\n"); 
-  
-    // initialize deck and card counts and actions
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
-    testGame->playedCardCount = 0; 
-    testGame->numBuys = 333;
-    testGame->coins = 500;
-
-    // Set up deck for player 0
-    
-    j = 0;
-    // Deck holds card values curse and duchy, no salvager
-    for(i=curse; i <= duchy; i++)
-    {
-    	if(i != estate)
-	{
-            testGame->deck[0][j] = i;
-            testGame->deckCount[0] += 1;
-            j++;
-        }
-    }
- 
-    // Played pile has valid cards that aren't in hand or deck, no salvager
-    j = 0;
-    for(i = sea_hag; i <= treasure_map; i++)
-    {
-	testGame->playedCards[j] = i;
-	testGame->playedCardCount++; 
-        j++;
-    }
-
-
-    // Set up hand for player 0
-    // Cards in hand include salvager and cards not in deck or discard
-    handPos = 0;
-    testGame->hand[0][0] = salvager;
-    testGame->hand[0][1] = copper; // cost 0
-    testGame->hand[0][2] = province; // cost 8
-    testGame->hand[0][3] = council_room; // cost 5
-    testGame->hand[0][4] = gardens; // cost 4
-    testGame->hand[0][5] = estate; // cost 2
-    testGame->hand[0][6] = village; // cost 3
-    testGame->handCount[0] = 7;
-    choicePos = 6; // village
-    trashCard = village;
-    choiceCost = 3;
-
-    // Save current hand count and action count
-    handCountBefore = testGame->handCount[0];
-    buyCountBefore = testGame->numBuys;
-    coinCountBefore = testGame->coins;
-
-
-    // call cardEffect
-    returnVal = cardEffect(card, choicePos, 0, 0, testGame, handPos, 0);
-   
-     
-    // Assert that the before handCount is the same as current handCount and that returnVal is 0
-    // Check the restults of this test case
-    char* testCase8 = "salvager effect with hand count of 7, salvager position of 0, buy count 333, coin count 500, village choice";
-
-    assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore - 2, returnVal, 0);
-    // printf("returnVal: %i, handCount: %i, assertHandCountReturnVal: %i\n", returnVal, testGame->handCount[0], assertHandCountReturnVal);
-
-    // Verify that salvager is in played pile, should be 1
-    playedPileResult = checkPlayedPile(testGame, salvager);
-    
-    // Verify that salvager is not in the hand, should be 0
-    handResult = checkHand(testGame, salvager);
-
-    // Assert that salvager is found in discard pile and not found in hand
-    assertSalvagerLocation = assertTrue(playedPileResult, 1, handResult, 0);
-
-    // printf("salvager played pile: %i, salvager hand: %i, assertSalvagerLocation: %i\n", playedPileResult, handResult, assertSalvagerLocation);
-
-    // Verify that the choice ard is not in the played pile, should be 0
-    playedPileChoiceResult = checkPlayedPile(testGame, trashCard);
-
-    // Verify that the choice card is not in the hand, should be 0
-    handChoiceResult = checkHand(testGame, trashCard);
-
-    // Assert that trash card is not in discard pile or hand
-    assertTrashCard = assertTrue(playedPileChoiceResult, 0, handChoiceResult, 0);
-
-    // printf("trash discard pile: %i, trash hand: %i, assertTrashCard: %i\n", playedPileChoiceResult, handChoiceResult, assertTrashCard);
-
-    // Assert that after playing salvager, there is one more buy and choiceCost more coins
-    assertBuyCoin = assertTrue(testGame->numBuys, buyCountBefore + 1, testGame->coins, coinCountBefore + choiceCost);
-
-    // printf("buycount: %i, coins: %i, assertBuyCoin: %i\n", testGame->numBuys, testGame->coins, assertBuyCoin);
- 
-    // Assert that all parts of the test pass
-    assertPart1 = assertTrue(assertHandCountReturnVal, 1, assertSalvagerLocation, 1);
-    assertPart2 = assertTrue(assertTrashCard, 1, assertBuyCoin, 1);
- 
-    // Assert that both halves of the test pass
-    if(assertTrue(assertPart1, 1, assertPart2, 1))
-    {
-	printResults(testCase8, 1);
-    }
-    else
-    {
-	printResults(testCase8, 0);
-    }
-
-
-   /* Test Case 9: 7 cards in hand, salvager in position 6, numBuys starts at 333, coins starts at 500, choice1 is village */
-    printf("\nsalvager Test Case 9\n"); 
-  
-    // initialize deck and card counts and actions
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
-    testGame->playedCardCount = 0; 
-    testGame->numBuys = 333;
-    testGame->coins = 500;
-
-    // Set up deck for player 0
-    
-    j = 0;
-    // Deck holds card values curse and duchy, no salvager
-    for(i=curse; i <= duchy; i++)
-    {
-    	if(i != estate)
-	{
-            testGame->deck[0][j] = i;
-            testGame->deckCount[0] += 1;
-            j++;
-        }
-    }
- 
-    // Played pile has valid cards that aren't in hand or deck, no salvager
-    j = 0;
-    for(i = sea_hag; i <= treasure_map; i++)
-    {
-	testGame->playedCards[j] = i;
-	testGame->playedCardCount++; 
-        j++;
-    }
-
-
-    // Set up hand for player 0
-    // Cards in hand include salvager and cards not in deck or discard
-    handPos = 6;
-    testGame->hand[0][0] = village; // cost 3
-    testGame->hand[0][1] = copper; // cost 0
-    testGame->hand[0][2] = province; // cost 8
-    testGame->hand[0][3] = council_room; // cost 5
-    testGame->hand[0][4] = gardens; // cost 4
-    testGame->hand[0][5] = estate; // cost 2
-    testGame->hand[0][6] = salvager;
-    testGame->handCount[0] = 7;
-    choicePos = 0; // 
-    trashCard = village;
-    choiceCost = 3;
-
-    // Save current hand count and action count
-    handCountBefore = testGame->handCount[0];
-    buyCountBefore = testGame->numBuys;
-    coinCountBefore = testGame->coins;
-
-    // call cardEffect
-    returnVal = cardEffect(card, choicePos, 0, 0, testGame, handPos, 0);
-   
-     
-    // Assert that the before handCount is the same as current handCount and that returnVal is 0
-    // Check the restults of this test case
-    char* testCase9 = "salvager effect with hand count of 7, salvager position of 6, buy count 333, coin count 500, village choice";
-
-    assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore - 2, returnVal, 0);
-    //printf("returnVal: %i, handCount: %i, assertHandCountReturnVal: %i\n", returnVal, testGame->handCount[0], assertHandCountReturnVal);
-
-    // Verify that salvager is in played pile, should be 1
-    playedPileResult = checkPlayedPile(testGame, salvager);
-    
-    // Verify that salvager is not in the hand, should be 0
-    handResult = checkHand(testGame, salvager);
-
-    // Assert that salvager is found in discard pile and not found in hand
-    assertSalvagerLocation = assertTrue(playedPileResult, 1, handResult, 0);
-
-    //printf("salvager played pile: %i, salvager hand: %i, assertSalvagerLocation: %i\n", playedPileResult, handResult, assertSalvagerLocation);
-
-    // Verify that the choice ard is not in the played pile, should be 0
-    playedPileChoiceResult = checkPlayedPile(testGame, trashCard);
-
-    // Verify that the choice card is not in the hand, should be 0
-    handChoiceResult = checkHand(testGame, trashCard);
-
-    // Assert that trash card is not in discard pile or hand
-    assertTrashCard = assertTrue(playedPileChoiceResult, 0, handChoiceResult, 0);
-
-    //printf("trash discard pile: %i, trash hand: %i, assertTrashCard: %i\n", playedPileChoiceResult, handChoiceResult, assertTrashCard);
-
-    // Assert that after playing salvager, there is one more buy and choiceCost more coins
-    assertBuyCoin = assertTrue(testGame->numBuys, buyCountBefore + 1, testGame->coins, coinCountBefore + choiceCost);
-
-    //printf("buycount: %i, coins: %i, assertBuyCoin: %i\n", testGame->numBuys, testGame->coins, assertBuyCoin);
- 
-    // Assert that all parts of the test pass
-    assertPart1 = assertTrue(assertHandCountReturnVal, 1, assertSalvagerLocation, 1);
-    assertPart2 = assertTrue(assertTrashCard, 1, assertBuyCoin, 1);
- 
-    // Assert that both halves of the test pass
-    if(assertTrue(assertPart1, 1, assertPart2, 1))
-    {
-	printResults(testCase9, 1);
-    }
-    else
-    {
-	printResults(testCase9, 0);
-    }
-
-
-   /* Test Case 10: 7 cards in hand, salvager in position 6, numBuys starts at 333, coins starts at 500, choice1 is province at index 2 */
-    printf("\nsalvager Test Case 10\n"); 
-  
-    // initialize deck and card counts and actions
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
-    testGame->playedCardCount = 0; 
-    testGame->numBuys = 333;
-    testGame->coins = 500;
-
-    // Set up deck for player 0
-    
-    j = 0;
-    // Deck holds card values curse and duchy, no salvager
-    for(i=curse; i <= duchy; i++)
-    {
-    	if(i != estate)
-	{
-            testGame->deck[0][j] = i;
-            testGame->deckCount[0] += 1;
-            j++;
-        }
-    }
- 
-    // Played pile has valid cards that aren't in hand or deck, no salvager
-    j = 0;
-    for(i = sea_hag; i <= treasure_map; i++)
-    {
-	testGame->playedCards[j] = i;
-	testGame->playedCardCount++; 
-        j++;
-    }
-
-
-    // Set up hand for player 0
-    // Cards in hand include salvager and cards not in deck or discard
-    handPos = 6;
-    testGame->hand[0][0] = village; // cost 3
-    testGame->hand[0][1] = copper; // cost 0
-    testGame->hand[0][2] = province; // cost 8
-    testGame->hand[0][3] = council_room; // cost 5
-    testGame->hand[0][4] = gardens; // cost 4
-    testGame->hand[0][5] = estate; // cost 2
-    testGame->hand[0][6] = salvager;
-    testGame->handCount[0] = 7;
-    choicePos = 2; // 
-    trashCard = province;
-    choiceCost = 8;
-
-    // Save current hand count and action count
-    handCountBefore = testGame->handCount[0];
-    buyCountBefore = testGame->numBuys;
-    coinCountBefore = testGame->coins;
-
-   
-    // call cardEffect
-    returnVal = cardEffect(card, choicePos, 0, 0, testGame, handPos, 0);
-   
-     
-    // Assert that the before handCount is the same as current handCount and that returnVal is 0
-    // Check the restults of this test case
-    char* testCase10 = "salvager effect with hand count of 7, salvager position of 6, buy count 333, coin count 500, village choice";
-
-    assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore - 2, returnVal, 0);
-  //  printf("returnVal: %i, handCount: %i, assertHandCountReturnVal: %i\n", returnVal, testGame->handCount[0], assertHandCountReturnVal);
-
-   
-    // Verify that salvager is in played pile, should be 1
-    playedPileResult = checkPlayedPile(testGame, salvager);
-    
-    // Verify that salvager is not in the hand, should be 0
-    handResult = checkHand(testGame, salvager);
-
-    // Assert that salvager is found in discard pile and not found in hand
-    assertSalvagerLocation = assertTrue(playedPileResult, 1, handResult, 0);
-
-    //printf("salvager played pile: %i, salvager hand: %i, assertSalvagerLocation: %i\n", playedPileResult, handResult, assertSalvagerLocation);
-
-    // Verify that the choice ard is not in the played pile, should be 0
-    playedPileChoiceResult = checkPlayedPile(testGame, trashCard);
-
-    // Verify that the choice card is not in the hand, should be 0
-    handChoiceResult = checkHand(testGame, trashCard);
-
-    // Assert that trash card is not in discard pile or hand
-    assertTrashCard = assertTrue(playedPileChoiceResult, 0, handChoiceResult, 0);
-
-    //printf("trash discard pile: %i, trash hand: %i, assertTrashCard: %i\n", playedPileChoiceResult, handChoiceResult, assertTrashCard);
-
-    // Assert that after playing salvager, there is one more buy and choiceCost more coins
-    assertBuyCoin = assertTrue(testGame->numBuys, buyCountBefore + 1, testGame->coins, coinCountBefore + choiceCost);
-
-    //printf("buycount: %i, coins: %i, assertBuyCoin: %i\n", testGame->numBuys, testGame->coins, assertBuyCoin);
- 
-    // Assert that all parts of the test pass
-    assertPart1 = assertTrue(assertHandCountReturnVal, 1, assertSalvagerLocation, 1);
-    assertPart2 = assertTrue(assertTrashCard, 1, assertBuyCoin, 1);
- 
-    // Assert that both halves of the test pass
-    if(assertTrue(assertPart1, 1, assertPart2, 1))
-    {
-	printResults(testCase10, 1);
-    }
-    else
-    {
-	printResults(testCase10, 0);
-    }
-
-
-
-
-
-}
-
-/******************************************************************************
- * Description: This is the main function. It calls testSalvager().
- * ***************************************************************************/
-
-int main(int argc, char *argv[])
-{
-    testSalvager();
-    return 0;
-}

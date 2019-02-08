@@ -2,6 +2,7 @@
  * Author: Laura Lund, lundl@oregonstate.edu
  * Assignment: CS 362 Winter 2019, Assignment 3
  * Description: This is a unit test for the card village in dominion.c.
+ * Citation: The example given in the assignment: cardtest4.c
  * ***************************************************************************/
 #include "dominion.h"
 #include "dominion_helpers.h" 
@@ -12,6 +13,7 @@
 #include <time.h>
 #include <string.h>
 
+#define TESTCARD "village"
 /******************************************************************************
  * Name: printResults
  * Parameters: a char* holding a string to be printed, an int holding a test
@@ -25,673 +27,753 @@ void printResults(char* testCase, int assertResult)
 {
     if(assertResult == 0)
     {
-	printf("village: FAIL %s\n", testCase);
+	printf("    village: FAIL %s\n", testCase);
     }
     else
     {
-	printf("village: PASS %s\n", testCase);
+	printf("    village: PASS %s\n", testCase);
     }
 }
-
 
 /******************************************************************************
  * Name: assertTrue()
  * Parameters: four ints: one holding the actual value of the test result, 
- * 	one holding the expected value of the test result, one holding the 
- * 	actual return value of a call to the tested function, and one holding
- * 	the expected return value of a call to the tested function.
- * Description: This helper function compares actual values to expected values.
- * 	If the actual values match the expected values, return 1. Otherwise, 
+ * 	one holding the expected value of the test result
+ * Description: This helper function compares actual value to expected value.
+ * 	If the actual value matches the expected value, return 1. Otherwise, 
  * 	return 0.
- * Return Value: Returns 1 if the input values are "true." Returns 0 otherwise.
+ * Return Value: Returns 1 if the input values match "true." Returns 0 otherwise.
  * ***************************************************************************/
-int assertTrue(int actualVal, int expectedVal, int actualReturn, int expectedReturn)
+int assertTrue(int actualVal, int expectedVal)
 {
-    if((actualVal == expectedVal) && (actualReturn == expectedReturn))
+    if(actualVal == expectedVal)
     {
 	return 1;
     }
     return 0;
 }
 
-/******************************************************************************
- * Name: checkForDiscard()
- * Parameters: a gameState struct pointer to a struct holding the result of
- * 	a call to cardEffect() and the value that should have been discarded
- * Description: This helper function checks whether or not the given card is in
- * 	the current hand.
- * Return Value: If the current hand holds this card, return 1. Otherwise, 
- * 	return 0.
- * ***************************************************************************/
-int checkForDiscard(struct gameState* test, int card)
+int main()
 {
- 
-    int i;
-    for(i=0; i < test->handCount[0]; i++)
-    {
-	// if this card is in this hand
-	if(test->hand[0][i] == card)
+    int newCards = 1; // village should return 1 new card
+	int actionIncrease = 2; // village should increase action by 2
+	int handCountComparison = 0; // 1 if handcount matches expected value
+	int discarded = 1; // the card played will be discarded
+	int actionCountComparison = 0; // 1 if deckCount matches expected value
+    
+	int numPlayers = 2;
+	int thisPlayer = 0;
+	int player1HandMatch = 1; // 0 if player 1's hand changes 
+	int player1DeckMatch = 1; // 0 if player 1's deck changes
+	int player1HandComp = 0; // 1 if matches expected value
+	int player1DeckComp = 0; // 1 if matches expected value
+	
+	int player2HandMatch = 1; // 0 if player 2's hand changes 
+	int player2DeckMatch = 1; // 0 if player 2's deck changes
+	int player2HandComp = 0; // 1 if matches expected value
+	int player2DeckComp = 0; // 1 if matches expected value
+	
+	int player3HandMatch = 1; // 0 if player 3's hand changes 
+	int player3DeckMatch = 1; // 0 if player 3's deck changes
+	int player3HandComp = 0; // 1 if matches expected value
+	int player3DeckComp = 0; // 1 if matches expected value
+	
+	int kingdomMatch = 1; // 0 if kingdom cards in states differ
+	int victoryMatch = 1; // 0 if victory cards in states differ
+	int kingdomComp = 0; // 1 if matches expected value
+	int victoryComp = 0; // 1 if matches expected value
+	
+    int handPos = 0, choice1 = 0, choice2 = 0, choice3 = 0, bonus = 0;
+	int i;
+    int seed = 1000; // needed for game initialization
+
+    // This the the state of the game that will be sent to village
+    struct gameState testGame;
+	
+	// This is the state of the game that will be used to preserve the original state
+	struct gameState originalGame;
+	
+	// Kingdom cards in play
+	int k[10] = {adventurer, embargo, village, minion, mine, cutpurse, sea_hag,
+		tribute, baron, council_room};
+	
+	// initialize game state and player cards
+	initializeGame(numPlayers, k, seed, &originalGame); 
+    
+	// Put village in the last hand position for this player
+	int originalCard = originalGame.hand[thisPlayer]
+		[originalGame.handCount[thisPlayer]-1]; // save original card
+	originalGame.hand[thisPlayer][originalGame.handCount[thisPlayer] - 1] = village;
+	handPos = originalGame.handCount[thisPlayer] - 1;
+	
+	// What is in current player's hand?
+	/*for(i = 0; i < originalGame.handCount[thisPlayer]; i++)
 	{
-	    return 1;
+		printf("card at %i: %i\n", i, originalGame.hand[thisPlayer][i]);
 	}
-    }
-    return 0;
+	
+	// What is in the current player's deck?
+	for(j = 0; j < originalGame.deckCount[thisPlayer]; j++)
+	{
+		printf("card at %i in deck: %i\n", j, originalGame.deck[thisPlayer][j]);
+	}*/
+	
+	printf("---------- Testing Card: %s ----------\n", TESTCARD);
+	
+	// ----- Test 1: hand count of 5, village in pos 4, 2 players -----
+	printf("-----Test 1: hand count of 5, village in pos 4, 2 players-----\n");
+	
+	// Copy game into test
+	memcpy(&testGame, &originalGame, sizeof(struct gameState));
+	
+	cardEffect(village, choice1, choice2, choice3, &testGame, handPos, &bonus);
+	
+	// hand count should be same as original hand count
+	// assert that the above is true
+	handCountComparison = assertTrue(testGame.handCount[thisPlayer], 
+		originalGame.handCount[thisPlayer] + newCards - discarded);
+		
+	// Print result
+	printResults("+/-0 cards in hand count", handCountComparison);
+	if(handCountComparison == 0)
+	{
+		printf("        hand count: %i, expected: %i\n", 
+			testGame.handCount[thisPlayer], originalGame.handCount[thisPlayer] 
+			+ newCards - discarded);	
+	}
+	
+	// action count should be 2 more than original action count
+	// assert that the above is true
+	actionCountComparison = assertTrue(testGame.numActions, 
+		originalGame.numActions + actionIncrease);
+	
+	// print result
+	printResults("+2 actions", actionCountComparison);
+	if(actionCountComparison == 0)
+	{
+		printf("     action count: %i, expected: %i\n", testGame.numActions, 
+			originalGame.numActions + actionIncrease);	
+	}
+	
+	// The states of other players should not change. 
+	// Check hand and deck of other players.
+	// Check hand
+	for (i=0; i < originalGame.handCount[1]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[1][i] != testGame.hand[1][i])
+		{
+			// this player had a change in their hand
+			player1HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[1]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[1][i] != testGame.deck[1][i])
+		{
+			// this player had a change in their hand
+			player1DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player1HandComp = assertTrue(player1HandMatch, 1);
+	
+	// print result
+	printResults("player 1's hand unchanged", player1HandComp);
+	
+	// Assert that the other player's deck did not change
+	player1DeckComp = assertTrue(player1DeckMatch, 1);
+	
+	// print result
+	printResults("player 1's deck unchanged", player1DeckComp);
+	
+	// village should no longer be in this player's hand at handPos
+	if(testGame.hand[thisPlayer][handPos] == village)
+	{
+		// print result
+		printResults("village not in hand", 0);
+	}
+	else
+	{
+		// print result
+		printResults("village not in hand", 1);
+	}
+	
+	// kingdom and victory cards should not change
+	// kingdom cards
+	for(i = 0; i < sizeof(k); i++)
+	{
+		// if the kingdom cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[k[i]] != testGame.supplyCount[k[i]])
+		{
+			printf("kingdom card %i is different at %i\n", k[i], i);
+			kingdomMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in kingdom cards
+	kingdomComp = assertTrue(kingdomMatch, 1);
+	
+	printResults("kingdom cards unchanged", kingdomComp);
+	
+	// victory cards
+	for(i = estate; i <= province; i++)
+	{
+		// if the victory cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[i] != testGame.supplyCount[i])
+		{
+			printf("victory card %i is different\n", i);
+			victoryMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in victory cards
+	victoryComp = assertTrue(victoryMatch, 1);
+	
+	printResults("victory cards unchanged", victoryComp);
+	
+	
+	// ----- Test 2: hand count of 5, village in pos 0, 2 players -----
+	printf("\n-----Test 2: hand count of 5, village in pos 0, 2 players-----\n");
+	
+	// Put village in the first hand position for this player
+	// save what's there now
+	int tempCard = originalGame.hand[thisPlayer][0];
+	
+	// restore original card for this index
+	originalGame.hand[thisPlayer][originalGame.handCount[thisPlayer]-1] = originalCard;
+	
+	// put village at new index
+	originalGame.hand[thisPlayer][0] = village;
+	handPos = 0;
+	
+	// save value that was at that index
+	originalCard = tempCard;
+	
+	// Copy game into test
+	memcpy(&testGame, &originalGame, sizeof(struct gameState));
+	
+	cardEffect(village, choice1, choice2, choice3, &testGame, handPos, &bonus);
+	
+	// hand count should be same as original hand count
+	// assert that the above is true
+	handCountComparison = assertTrue(testGame.handCount[thisPlayer], 
+		originalGame.handCount[thisPlayer] + newCards - discarded);
+		
+	// Print result
+	printResults("+/- 0 cards in hand count", handCountComparison);
+	if(handCountComparison == 0)
+	{
+		printf("        hand count: %i, expected: %i\n", 
+			testGame.handCount[thisPlayer], originalGame.handCount[thisPlayer] 
+			+ newCards - discarded);	
+	}
+	
+	// action count should be 2 more than original action count
+	// assert that the above is true
+	actionCountComparison = assertTrue(testGame.numActions, 
+		originalGame.numActions + actionIncrease);
+	
+	// print result
+	printResults("+2 actions", actionCountComparison);
+	if(actionCountComparison == 0)
+	{
+		printf("     action count: %i, expected: %i\n", testGame.numActions, 
+			originalGame.numActions + actionIncrease);	
+	}
+	
+	// The states of other players should not change. 
+	// Check hand and deck of other players.
+	// Check hand
+	for (i=0; i < originalGame.handCount[1]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[1][i] != testGame.hand[1][i])
+		{
+			// this player had a change in their hand
+			player1HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[1]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[1][i] != testGame.deck[1][i])
+		{
+			// this player had a change in their hand
+			player1DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player1HandComp = assertTrue(player1HandMatch, 1);
+	
+	// print result
+	printResults("player 1's hand unchanged", player1HandComp);
+	
+	// Assert that the other player's deck did not change
+	player1DeckComp = assertTrue(player1DeckMatch, 1);
+	
+	// print result
+	printResults("player 1's deck unchanged", player1DeckComp);
+	
+	// village should no longer be in this player's hand at handPos
+	if(testGame.hand[thisPlayer][handPos] == village)
+	{
+		// print result
+		printResults("village not in hand", 0);
+	}
+	else
+	{
+		// print result
+		printResults("village not in hand", 1);
+	}
+	
+	// kingdom and victory cards should not change
+	// kingdom cards
+	for(i = 0; i < sizeof(k); i++)
+	{
+		// if the kingdom cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[k[i]] != testGame.supplyCount[k[i]])
+		{
+			printf("kingdom card %i is different at %i\n", k[i], i);
+			kingdomMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in kingdom cards
+	kingdomComp = assertTrue(kingdomMatch, 1);
+	
+	printResults("kingdom cards unchanged", kingdomComp);
+	
+	// victory cards
+	for(i = estate; i <= province; i++)
+	{
+		// if the victory cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[i] != testGame.supplyCount[i])
+		{
+			printf("victory card %i is different\n", i);
+			victoryMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in victory cards
+	victoryComp = assertTrue(victoryMatch, 1);
+	
+	printResults("victory cards unchanged", victoryComp);
+	
+	// ----- Test 3: hand count of 5, village in pos 4, 3 players -----
+	printf("\n-----Test 3: hand count of 5, village in pos 4, 3 players-----\n");
+	
+	numPlayers = 3;
+	
+	// reinitialize game for 3 players
+	initializeGame(numPlayers, k, seed, &originalGame); 
+	
+	// Put village in the last hand position for this player
+	originalCard = originalGame.hand[thisPlayer]
+		[originalGame.handCount[thisPlayer]-1]; // save original card
+	originalGame.hand[thisPlayer][originalGame.handCount[thisPlayer] - 1] = village;
+	handPos = originalGame.handCount[thisPlayer] - 1;
+	
+	// Copy game into test
+	memcpy(&testGame, &originalGame, sizeof(struct gameState));
+	
+	cardEffect(village, choice1, choice2, choice3, &testGame, handPos, &bonus);
+	
+	// hand count should be same as original hand count
+	// assert that the above is true
+	handCountComparison = assertTrue(testGame.handCount[thisPlayer], 
+		originalGame.handCount[thisPlayer] + newCards - discarded);
+		
+	// Print result
+	printResults("+/- 0 cards in hand count", handCountComparison);
+	if(handCountComparison == 0)
+	{
+		printf("        hand count: %i, expected: %i\n", 
+			testGame.handCount[thisPlayer], originalGame.handCount[thisPlayer] 
+			+ newCards - discarded);	
+	}
+	
+	// action count should be 2 more than original action count
+	// assert that the above is true
+	actionCountComparison = assertTrue(testGame.numActions, 
+		originalGame.numActions + actionIncrease);
+	
+	// print result
+	printResults("+2 actions", actionCountComparison);
+	if(actionCountComparison == 0)
+	{
+		printf("     action count: %i, expected: %i\n", testGame.numActions, 
+			originalGame.numActions + actionIncrease);	
+	}
+	
+	// The states of other players should not change. 
+	// Check hand and deck of other players.
+	
+	// Player 1
+	// Check hand
+	for (i=0; i < originalGame.handCount[1]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[1][i] != testGame.hand[1][i])
+		{
+			// this player had a change in their hand
+			player1HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[1]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[1][i] != testGame.deck[1][i])
+		{
+			// this player had a change in their hand
+			player1DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player1HandComp = assertTrue(player1HandMatch, 1);
+	
+	// print result
+	printResults("player 1's hand unchanged", player1HandComp);
+	
+	// Assert that the other player's deck did not change
+	player1DeckComp = assertTrue(player1DeckMatch, 1);
+	
+	// print result
+	printResults("player 1's deck unchanged", player1DeckComp);
+	
+	// Player 2
+	// Check hand
+	for (i=0; i < originalGame.handCount[2]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[2][i] != testGame.hand[2][i])
+		{
+			// this player had a change in their hand
+			player2HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[2]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[2][i] != testGame.deck[2][i])
+		{
+			// this player had a change in their hand
+			player2DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player2HandComp = assertTrue(player2HandMatch, 1);
+	
+	// print result
+	printResults("player 2's hand unchanged", player2HandComp);
+	
+	// Assert that the other player's deck did not change
+	player2DeckComp = assertTrue(player2DeckMatch, 1);
+	
+	// print result
+	printResults("player 2's deck unchanged", player2DeckComp);
+	
+	
+	
+	// village should no longer be in this player's hand at handPos
+	if(testGame.hand[thisPlayer][handPos] == village)
+	{
+		// print result
+		printResults("village not in hand", 0);
+	}
+	else
+	{
+		// print result
+		printResults("village not in hand", 1);
+	}
+	
+	// kingdom and victory cards should not change
+	// kingdom cards
+	for(i = 0; i < sizeof(k); i++)
+	{
+		// if the kingdom cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[k[i]] != testGame.supplyCount[k[i]])
+		{
+			printf("kingdom card %i is different at %i\n", k[i], i);
+			kingdomMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in kingdom cards
+	kingdomComp = assertTrue(kingdomMatch, 1);
+	
+	printResults("kingdom cards unchanged", kingdomComp);
+	
+	// victory cards
+	for(i = estate; i <= province; i++)
+	{
+		// if the victory cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[i] != testGame.supplyCount[i])
+		{
+			printf("victory card %i is different\n", i);
+			victoryMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in victory cards
+	victoryComp = assertTrue(victoryMatch, 1);
+	
+	printResults("victory cards unchanged", victoryComp);
+	
+	// ----- Test 4: hand count of 5, village in pos 4, 4 players -----
+	printf("\n-----Test 4: hand count of 5, village in pos 4, 4 players-----\n");
+	
+	numPlayers = 4;
+	
+	// reinitialize game for 4 players
+	initializeGame(numPlayers, k, seed, &originalGame); 
+	
+	// Put village in the last hand position for this player
+	originalCard = originalGame.hand[thisPlayer]
+		[originalGame.handCount[thisPlayer]-1]; // save original card
+	originalGame.hand[thisPlayer][originalGame.handCount[thisPlayer] - 1] = village;
+	handPos = originalGame.handCount[thisPlayer] - 1;
+	
+	// Copy game into test
+	memcpy(&testGame, &originalGame, sizeof(struct gameState));
+	
+	cardEffect(village, choice1, choice2, choice3, &testGame, handPos, &bonus);
+	
+	// hand count should be same as original hand count
+	// assert that the above is true
+	handCountComparison = assertTrue(testGame.handCount[thisPlayer], 
+		originalGame.handCount[thisPlayer] + newCards - discarded);
+		
+	// Print result
+	printResults("+/- 0 cards in hand count", handCountComparison);
+	if(handCountComparison == 0)
+	{
+		printf("        hand count: %i, expected: %i\n", 
+			testGame.handCount[thisPlayer], originalGame.handCount[thisPlayer] 
+			+ newCards - discarded);	
+	}
+	
+	// action count should be 2 more than original action count
+	// assert that the above is true
+	actionCountComparison = assertTrue(testGame.numActions, 
+		originalGame.numActions + actionIncrease);
+	
+	// print result
+	printResults("+2 actions", actionCountComparison);
+	if(actionCountComparison == 0)
+	{
+		printf("     action count: %i, expected: %i\n", testGame.numActions, 
+			originalGame.numActions + actionIncrease);	
+	}
+	
+	// The states of other players should not change. 
+	// Check hand and deck of other players.
+	
+	// Player 1
+	// Check hand
+	for (i=0; i < originalGame.handCount[1]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[1][i] != testGame.hand[1][i])
+		{
+			// this player had a change in their hand
+			player1HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[1]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[1][i] != testGame.deck[1][i])
+		{
+			// this player had a change in their hand
+			player1DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player1HandComp = assertTrue(player1HandMatch, 1);
+	
+	// print result
+	printResults("player 1's hand unchanged", player1HandComp);
+	
+	// Assert that the other player's deck did not change
+	player1DeckComp = assertTrue(player1DeckMatch, 1);
+	
+	// print result
+	printResults("player 1's deck unchanged", player1DeckComp);
+	
+	// Player 2
+	// Check hand
+	for (i=0; i < originalGame.handCount[2]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[2][i] != testGame.hand[2][i])
+		{
+			// this player had a change in their hand
+			player2HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[2]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[2][i] != testGame.deck[2][i])
+		{
+			// this player had a change in their hand
+			player2DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player2HandComp = assertTrue(player2HandMatch, 1);
+	
+	// print result
+	printResults("player 2's hand unchanged", player2HandComp);
+	
+	// Assert that the other player's deck did not change
+	player2DeckComp = assertTrue(player2DeckMatch, 1);
+	
+	// print result
+	printResults("player 2's deck unchanged", player2DeckComp);
+	
+	// Player 3
+	// Check hand
+	for (i=0; i < originalGame.handCount[3]; i++)
+	{
+		// compare hands
+		if(originalGame.hand[3][i] != testGame.hand[3][i])
+		{
+			// this player had a change in their hand
+			player3HandMatch = 0;
+			break;
+		}
+	}
+	
+	// Check deck
+	for (i=0; i < originalGame.deckCount[3]; i++)
+	{
+		// compare decks
+		if(originalGame.deck[3][i] != testGame.deck[3][i])
+		{
+			// this player had a change in their hand
+			player3DeckMatch = 0;
+			break;
+		}
+	}
+	
+	// Assert that the other player's hand did not change
+	player3HandComp = assertTrue(player3HandMatch, 1);
+	
+	// print result
+	printResults("player 3's hand unchanged", player3HandComp);
+	
+	// Assert that the other player's deck did not change
+	player3DeckComp = assertTrue(player3DeckMatch, 1);
+	
+	// print result
+	printResults("player 3's deck unchanged", player3DeckComp);
+	
+	
+	
+	// village should no longer be in this player's hand at handPos
+	if(testGame.hand[thisPlayer][handPos] == village)
+	{
+		// print result
+		printResults("village not in hand", 0);
+	}
+	else
+	{
+		// print result
+		printResults("village not in hand", 1);
+	}
+	
+	// kingdom and victory cards should not change
+	// kingdom cards
+	for(i = 0; i < sizeof(k); i++)
+	{
+		// if the kingdom cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[k[i]] != testGame.supplyCount[k[i]])
+		{
+			printf("kingdom card %i is different at %i\n", k[i], i);
+			kingdomMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in kingdom cards
+	kingdomComp = assertTrue(kingdomMatch, 1);
+	
+	printResults("kingdom cards unchanged", kingdomComp);
+	
+	// victory cards
+	for(i = estate; i <= province; i++)
+	{
+		// if the victory cards in the test are different from 
+		//those in the original
+		if(originalGame.supplyCount[i] != testGame.supplyCount[i])
+		{
+			printf("victory card %i is different\n", i);
+			victoryMatch = 0;
+			
+			break;
+		}
+	}
+	
+	// assert no change in victory cards
+	victoryComp = assertTrue(victoryMatch, 1);
+	
+	printResults("victory cards unchanged", victoryComp);
+	
+	printf("---------- Testing for %s complete. ----------\n", TESTCARD);
+	
+	return 0;
 }
 
-
-/******************************************************************************
- * Name: testVillage()
- * Parameters: none
- * Description: This unit test checks whether calling cardEffect() with 
- * 	village as the card parameter, the village effect causes 2 actions to
- * 	be gained, the village card to be discarded, and a new card to be drawn
- *      into the hand. Thus, the hand count remains the same before and after
- *      the call and the numActions count increases by 2.
- * Return Value: none
- * ***************************************************************************/
-
-void testVillage()
-{
-    printf("\n\nUNIT TESTS FOR VILLAGE CARD EFFECT\n");
-    // Initialize a gameState struct with values we need for this test
-    struct gameState* testGame = newGame();
-    testGame->numPlayers = 2;
-
-    // set player 0 in whoseTurn
-    testGame->whoseTurn = 0;
-
-    // set card = village
-    int card = village;
-
-    /* Test Case 1: 5 cards in hand, village in position 4, numActions starts at 1 */
-    printf("village Test Case 1\n"); 
-  
-    // initialize deck and card counts and actions
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
-    testGame->playedCardCount = 0; 
-    testGame->numActions = 1;
-
-    // Set up deck for player 0
-    int i;
-    // Deck holds card values < smithy
-    for(i=curse; i <= remodel ; i++)
-    {
-        testGame->deck[0][i] = i;
-        testGame->deckCount[0] += 1;
-    }
- 
-    // Discard pile has valid cards
-    for(i = curse; i < remodel; i++)
-    {
-	testGame->discard[0][i] = i; 
-    }
-
-
-    // Played card pile has valid cards
-    for(i = curse; i < remodel; i++)
-    {
-	testGame->playedCards[i] = i;
-    }
-
-
-    // Set up hand for player 0
-    int j = 0;
-    while(j < 5)
-    {
-	// get cards from second half of card values
-	for(i = baron; i <= treasure_map; i++)
-        {
-	    testGame->hand[0][j] = i;
-            testGame->handCount[0]++;   
-            j++;
-            
-            if(j >= 5)
-            {
-		break;
-	    }
-        }
-    }
-
-
-    // put village in position 4
-    testGame->hand[0][4] = village;
-    int handPos = 4;
-
-
-    // Save current hand count and action count
-    int handCountBefore = testGame->handCount[0];
-    int actionCountBefore = testGame->numActions;
-
-    // call cardEffect
-    int returnVal = cardEffect(card, 0, 0, 0, testGame, handPos, 0);
-    
-    // Assert that the before handCount is the same as current handCount and that returnVal is 0
-    // Check the restults of this test case
-    char* testCase1 = "village effect with hand count of 5, village position of 4, numActions starts at 1";
-
-    int assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore + 1 - 1, returnVal, 0);
-
-    // Verify that village is not in the hand
-    int discardResult = checkForDiscard(testGame, village);
-
-    // Assert that after playing village, there are 2 more actions and that village not in hand
-    int assertActionDiscard = assertTrue(testGame->numActions, actionCountBefore + 2, discardResult, 0);
-  
-    // Assert that both halves of the test pass
-    if(assertTrue(assertHandCountReturnVal, 1, assertActionDiscard, 1))
-    {
-	printResults(testCase1, 1);
-    }
-    else
-    {
-	printResults(testCase1, 0);
-    }
-
-    /* Test Case 2: 5 cards in hand, village in position 0, numActions starts at 1 */
-    printf("\nvillage Test Case 2\n"); 
-    // reset deck and card counts and actions
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
-    testGame->playedCardCount = 0; 
-    testGame->numActions = 1;
-
-    // Set up deck for player 0
-    
-    // Deck holds card values < smithy
-    for(i=curse; i <= remodel ; i++)
-    {
-        testGame->deck[0][i] = i;
-        testGame->deckCount[0] += 1;
-    }
- 
-    // Discard pile has valid cards
-    for(i = curse; i < remodel; i++)
-    {
-	testGame->discard[0][i] = i; 
-    }
-
-
-    // Played card pile has valid cards
-    for(i = curse; i < remodel; i++)
-    {
-	testGame->playedCards[i] = i;
-    }
-
-    // Set up hand for player 0
- 
-    j = 0;
-    while(j < 5)
-    {
-	// get cards from second half of card values
-	for(i = baron; i <= treasure_map; i++)
-        {
-	    testGame->hand[0][j] = i;
-            testGame->handCount[0]++;   
-            j++;
-            
-            if(j >= 5)
-            {
-		break;
-	    }
-        }
-    }
-
-
-    // put village in position 0
-    testGame->hand[0][0] = village;
-    handPos = 0;
-
-
-    // Save current hand count and action count
-    handCountBefore = testGame->handCount[0];
-    actionCountBefore = testGame->numActions;
-
-    // call cardEffect
-    returnVal = cardEffect(card, 0, 0, 0, testGame, handPos, 0);
-    
-    // Assert that the before handCount is the same as current handCount and that returnVal is 0
-    // Check the restults of this test case
-    char* testCase2 = "village effect with hand count of 5, village position of 0, numActions starts at 1";
-
-    assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore + 1 - 1, returnVal, 0);
-
-    // Verify that village is not in the hand
-    discardResult = checkForDiscard(testGame, village);
-
-    // Assert that after playing village, there are 2 more actions and that village not in hand
-    assertActionDiscard = assertTrue(testGame->numActions, actionCountBefore + 2, discardResult, 0);
-  
-    // Assert that both halves of the test pass
-    if(assertTrue(assertHandCountReturnVal, 1, assertActionDiscard, 1))
-    {
-	printResults(testCase2, 1);
-    }
-    else
-    {
-	printResults(testCase2, 0);
-    }
-
-
-    /* Test Case 3: 5 cards in hand, village in position 0, numActions is 3 */
-    printf("\nvillage Test Case 3\n"); 
-
-    // reset deck and card counts and actions
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
-    testGame->playedCardCount = 0; 
-    testGame->numActions = 3;
-
-    // Set up deck for player 0
-    
-    // Deck holds card values < smithy
-    for(i=curse; i <= remodel ; i++)
-    {
-        testGame->deck[0][i] = i;
-        testGame->deckCount[0] += 1;
-    }
- 
-    // Discard pile has valid cards
-    for(i = curse; i < remodel; i++)
-    {
-	testGame->discard[0][i] = i; 
-    }
-
-
-    // Played card pile has valid cards
-    for(i = curse; i < remodel; i++)
-    {
-	testGame->playedCards[i] = i;
-    }
-    // Set up hand for player 0
-    j = 0;
-    while(j < 5)
-    {
-	// get cards from second half of card values
-	for(i = baron; i <= treasure_map; i++)
-        {
-	    testGame->hand[0][j] = i;
-            testGame->handCount[0]++;   
-            j++;
-            
-            if(j >= 5)
-            {
-		break;
-	    }
-        }
-    }
-
-
-    // put village in position 0
-    testGame->hand[0][0] = village;
-    handPos = 0;
-
-
-    // Save current hand count and action count
-    handCountBefore = testGame->handCount[0];
-    actionCountBefore = testGame->numActions;
-
-    // call cardEffect
-    returnVal = cardEffect(card, 0, 0, 0, testGame, handPos, 0);
-    
-    // Assert that the before handCount is the same as current handCount and that returnVal is 0
-    // Check the restults of this test case
-    char* testCase3 = "village effect with hand count of 5, village position of 0, and numActions initial value of 3";
-
-    assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore + 1 - 1, returnVal, 0);
-
-    // Verify that village is not in the hand
-    discardResult = checkForDiscard(testGame, village);
-
-    // Assert that after playing village, there are 2 more actions and that village not in hand
-    assertActionDiscard = assertTrue(testGame->numActions, actionCountBefore + 2, discardResult, 0);
-  
-    // Assert that both halves of the test pass
-    if(assertTrue(assertHandCountReturnVal, 1, assertActionDiscard, 1))
-    {
-	printResults(testCase3, 1);
-    }
-    else
-    {
-	printResults(testCase3, 0);
-    }
-
-
-    /* Test Case 4: 1 card in hand, village in position 0, numActions is 4 */
-    printf("\nvillage Test Case 4\n");
-
-    // reset deck and card counts and actions
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
-    testGame->playedCardCount = 0; 
-    testGame->numActions = 4;
-
-    // Set up deck for player 0
-    
-    // Deck holds card values < smithy
-    for(i=curse; i <= remodel ; i++)
-    {
-        testGame->deck[0][i] = i;
-        testGame->deckCount[0] += 1;
-    }
- 
-    // Discard pile has valid cards
-    for(i = curse; i < remodel; i++)
-    {
-	testGame->discard[0][i] = i; 
-    }
-
-
-    // Played card pile has valid cards
-    for(i = curse; i < remodel; i++)
-    {
-	testGame->playedCards[i] = i;
-    }
-  
-    // Set up hand for player 0
-   
-    // put village in position 0
-    testGame->hand[0][0] = village;
-    testGame->handCount[0]++;
-    handPos = 0;
-
-
-    // Save current hand count and action count
-    handCountBefore = testGame->handCount[0];
-    actionCountBefore = testGame->numActions;
-
-    // call cardEffect
-    returnVal = cardEffect(card, 0, 0, 0, testGame, handPos, 0);
-    
-    // Assert that the before handCount is the same as current handCount and that returnVal is 0
-    // Check the restults of this test case
-    char* testCase4 = "village effect with hand count of 1, village position of 0, and numActions initial value of 4";
-
-    assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore + 1 - 1, returnVal, 0);
-
-    // Verify that village is not in the hand
-    discardResult = checkForDiscard(testGame, village);
-
-    // Assert that after playing village, there are 2 more actions and that village not in hand
-    assertActionDiscard = assertTrue(testGame->numActions, actionCountBefore + 2, discardResult, 0);
-  
-    // Assert that both halves of the test pass
-    if(assertTrue(assertHandCountReturnVal, 1, assertActionDiscard, 1))
-    {
-	printResults(testCase4, 1);
-    }
-    else
-    {
-	printResults(testCase4, 0);
-    }
-
-    /* Test Case 5: MAX_HAND cards in hand, village in position 217, numActions is 1 */
-    printf("\nvillage Test Case 5\n"); 
-
-    // reset deck and card counts and actions
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
-    testGame->playedCardCount = 0; 
-    testGame->numActions = 1;
-
-    // Set up deck for player 0
-    
-    // Deck holds card values < smithy
-    for(i=curse; i <= remodel ; i++)
-    {
-        testGame->deck[0][i] = i;
-        testGame->deckCount[0] += 1;
-    }
- 
-    // Discard pile has valid cards
-    for(i = curse; i < remodel; i++)
-    {
-	testGame->discard[0][i] = i; 
-    }
-
-
-    // Played card pile has valid cards
-    for(i = curse; i < remodel; i++)
-    {
-	testGame->playedCards[i] = i;
-    }
-    // Set up hand for player 0
-    j = 0;
-    while(j < MAX_HAND)
-    {
-	// get cards from second half of card values
-	for(i = baron; i <= treasure_map; i++)
-        {
-	    testGame->hand[0][j] = i;
-            testGame->handCount[0]++;   
-            j++;
-            
-            if(j >= MAX_HAND)
-            {
-		break;
-	    }
-        }
-    }
-
-
-    // put village in position 217
-    testGame->hand[0][217] = village;
-    handPos = 217;
-
-
-    // Save current hand count and action count
-    handCountBefore = testGame->handCount[0];
-    actionCountBefore = testGame->numActions;
-
-    // call cardEffect
-    returnVal = cardEffect(card, 0, 0, 0, testGame, handPos, 0);
-    
-    // Assert that the before handCount is the same as current handCount and that returnVal is 0
-    // Check the restults of this test case
-    char* testCase5 = "village effect with hand count of MAX_HAND, village position of 217, and numActions initial value of 1";
-
-    assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore + 1 - 1, returnVal, 0);
-
-    // Verify that village is not in the hand
-    discardResult = checkForDiscard(testGame, village);
-
-    // Assert that after playing village, there are 2 more actions and that village not in hand
-    assertActionDiscard = assertTrue(testGame->numActions, actionCountBefore + 2, discardResult, 0);
-  
-    // Assert that both halves of the test pass
-    if(assertTrue(assertHandCountReturnVal, 1, assertActionDiscard, 1))
-    {
-	printResults(testCase5, 1);
-    }
-    else
-    {
-	printResults(testCase5, 0);
-    }
-
-
-    /* Test Case 6: MAX_HAND cards in hand, village in position 217, numActions is 500 */
-    printf("\nvillage Test Case 6\n"); 
-
-    // reset deck and card counts and actions
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
-    testGame->playedCardCount = 0; 
-    testGame->numActions = 500;
-
-    // Set up deck for player 0
-    
-    // Deck holds card values < smithy
-    for(i=curse; i <= remodel ; i++)
-    {
-        testGame->deck[0][i] = i;
-        testGame->deckCount[0] += 1;
-    }
- 
-    // Discard pile has valid cards
-    for(i = curse; i < remodel; i++)
-    {
-	testGame->discard[0][i] = i; 
-    }
-
-
-    // Played card pile has valid cards
-    for(i = curse; i < remodel; i++)
-    {
-	testGame->playedCards[i] = i;
-    }
-    // Set up hand for player 0
-    j = 0;
-    while(j < MAX_HAND)
-    {
-	// get cards from second half of card values
-	for(i = baron; i <= treasure_map; i++)
-        {
-	    testGame->hand[0][j] = i;
-            testGame->handCount[0]++;   
-            j++;
-            
-            if(j >= MAX_HAND)
-            {
-		break;
-	    }
-        }
-    }
-
-
-    // put village in position 217
-    testGame->hand[0][217] = village;
-    handPos = 217;
-
-
-    // Save current hand count and action count
-    handCountBefore = testGame->handCount[0];
-    actionCountBefore = testGame->numActions;
-
-    // call cardEffect
-    returnVal = cardEffect(card, 0, 0, 0, testGame, handPos, 0);
-    
-    // Assert that the before handCount is the same as current handCount and that returnVal is 0
-    // Check the restults of this test case
-    char* testCase6 = "village effect with hand count of MAX_HAND, village position of 217, and numActions initial value of 500";
-
-    assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore + 1 - 1, returnVal, 0);
-
-    // Verify that village is not in the hand
-    discardResult = checkForDiscard(testGame, village);
-
-    // Assert that after playing village, there are 2 more actions and that village not in hand
-    assertActionDiscard = assertTrue(testGame->numActions, actionCountBefore + 2, discardResult, 0);
-  
-    // Assert that both halves of the test pass
-    if(assertTrue(assertHandCountReturnVal, 1, assertActionDiscard, 1))
-    {
-	printResults(testCase6, 1);
-    }
-    else
-    {
-	printResults(testCase6, 0);
-    }
-
-    /* Test Case 7: MAX_HAND cards in hand, village in position 217, numActions is 0 */
-    printf("\nvillage Test Case 7\n"); 
-
-    // reset deck and card counts and actions
-    testGame->deckCount[0] = 0;
-    testGame->handCount[0] = 0;
-    testGame->discardCount[0] = 0;
-    testGame->playedCardCount = 0; 
-    testGame->numActions = 0;
-
-    // Set up deck for player 0
-    
-    // Deck holds card values < smithy
-    for(i=curse; i <= remodel ; i++)
-    {
-        testGame->deck[0][i] = i;
-        testGame->deckCount[0] += 1;
-    }
- 
-    // Discard pile has valid cards
-    for(i = curse; i < remodel; i++)
-    {
-	testGame->discard[0][i] = i; 
-    }
-
-
-    // Played card pile has valid cards
-    for(i = curse; i < remodel; i++)
-    {
-	testGame->playedCards[i] = i;
-    }
-    // Set up hand for player 0
-    j = 0;
-    while(j < MAX_HAND)
-    {
-	// get cards from second half of card values
-	for(i = baron; i <= treasure_map; i++)
-        {
-	    testGame->hand[0][j] = i;
-            testGame->handCount[0]++;   
-            j++;
-            
-            if(j >= MAX_HAND)
-            {
-		break;
-	    }
-        }
-    }
-
-
-    // put village in position 217
-    testGame->hand[0][217] = village;
-    handPos = 217;
-
-
-    // Save current hand count and action count
-    handCountBefore = testGame->handCount[0];
-    actionCountBefore = testGame->numActions;
-
-    // call cardEffect
-    returnVal = cardEffect(card, 0, 0, 0, testGame, handPos, 0);
-    
-    // Assert that the before handCount is the same as current handCount and that returnVal is 0
-    // Check the restults of this test case
-    char* testCase7 = "village effect with hand count of MAX_HAND, village position of 217, and numActions initial value of 0";
-
-    assertHandCountReturnVal = assertTrue(testGame->handCount[0], handCountBefore + 1 - 1, returnVal, 0);
-
-    // Verify that village is not in the hand
-    discardResult = checkForDiscard(testGame, village);
-
-    // Assert that after playing village, there are 2 more actions and that village not in hand
-    assertActionDiscard = assertTrue(testGame->numActions, actionCountBefore + 2, discardResult, 0);
-  
-    // Assert that both halves of the test pass
-    if(assertTrue(assertHandCountReturnVal, 1, assertActionDiscard, 1))
-    {
-	printResults(testCase7, 1);
-    }
-    else
-    {
-	printResults(testCase7, 0);
-    }
-
-
-
-}
-
-/******************************************************************************
- * Description: This is the main function. It calls testShuffle().
- * ***************************************************************************/
-
-int main(int argc, char *argv[])
-{
-    testVillage();
-    return 0;
-}
