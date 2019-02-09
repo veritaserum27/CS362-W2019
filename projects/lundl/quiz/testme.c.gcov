@@ -1,0 +1,172 @@
+        -:    0:Source:testme.c
+        -:    0:Graph:testme.gcno
+        -:    0:Data:testme.gcda
+        -:    0:Runs:1
+        -:    0:Programs:1
+        -:    1:/******************************************************************************
+        -:    2: * Author: Laura Lund, lundl@oregonstate.edu
+        -:    3: * Assignment: CS 362 Winter 2019, Random Tester Quiz
+        -:    4: * Description: This file contains a function testme() that is tested via the
+        -:    5: * 		random tester functions inputChar() and inputString().
+        -:    6: * ***************************************************************************/
+        -:    7:#include<stdio.h>
+        -:    8:#include<string.h>
+        -:    9:#include<stdlib.h>
+        -:   10:#include<time.h>
+        -:   11:
+function inputChar called 223 returned 100% blocks executed 100%
+      223:   12:char inputChar()
+        -:   13:{
+        -:   14:    // TODO: rewrite this function
+      223:   15:	int randIndex = rand();
+call    0 returned 100%
+      223:   16:	randIndex = randIndex % 9;
+        -:   17:	
+        -:   18:	// Create a pool of valid characters
+        -:   19:	char static characterPool[] = {'[', '(', '{', ' ', 'a', 'x', '}', ')', ']'};
+        -:   20:	
+        -:   21:	// Randomly select a character from the valid pool
+        -:   22:	
+        -:   23:	// Return this character
+      223:   24:    return characterPool[randIndex];
+        -:   25:}
+        -:   26:
+function inputString called 61 returned 100% blocks executed 100%
+       61:   27:char *inputString()
+        -:   28:{
+        -:   29:    // TODO: rewrite this function
+        -:   30:	int i;
+        -:   31:	
+        -:   32:	// Randomly choose whether or not to return "reset\0" or a new string
+       61:   33:	int randomChoice = rand();
+call    0 returned 100%
+       61:   34:	randomChoice = randomChoice % 2;
+        -:   35:
+        -:   36:	// if randomChoice == 0
+       61:   37:	if(randomChoice == 0)
+branch  0 taken 56% (fallthrough)
+branch  1 taken 44%
+        -:   38:	{
+        -:   39:		// return "reset"
+        -:   40:		char static resetString[] = {'r', 'e', 's', 'e', 't', '\0'};
+       34:   41:		return resetString;
+        -:   42:	}
+        -:   43:	// Otherwise
+        -:   44:	// Build strings of length 6 using random characters.
+        -:   45:	char static returnString[6];
+        -:   46:    // Return the random string
+      189:   47:	for(i = 0; i < sizeof(returnString); i++)
+branch  0 taken 86%
+branch  1 taken 14% (fallthrough)
+        -:   48:	{
+        -:   49:		// call inputChar to get another character
+      162:   50:		returnString[i] = inputChar();
+call    0 returned 100%
+        -:   51:	}
+        -:   52:	// return new string
+       27:   53:    return returnString;
+        -:   54:}
+        -:   55:
+function testme called 1 returned 0% blocks executed 100%
+        1:   56:void testme()
+        -:   57:{
+        1:   58:  int tcCount = 0;
+        -:   59:  char *s;
+        -:   60:  char c;
+        1:   61:  int state = 0;
+        -:   62:  while (1)
+        -:   63:  {
+        -:   64:	//int randomChoice = rand();
+        -:   65:	//randomChoice = randomChoice % 3;
+        -:   66:	//printf("randomChoice: %i\n", randomChoice);
+       61:   67:    tcCount++;
+       61:   68:    c = inputChar();
+call    0 returned 100%
+       61:   69:    s = inputString();
+call    0 returned 100%
+       61:   70:    printf("Iteration %d: c = %c, s = %s, state = %d\n", tcCount, c, s, state);
+call    0 returned 100%
+        -:   71:
+       61:   72:    if (c == '[' && state == 0) state = 1;
+branch  0 taken 8% (fallthrough)
+branch  1 taken 92%
+branch  2 taken 20% (fallthrough)
+branch  3 taken 80%
+       61:   73:    if (c == '(' && state == 1) state = 2;
+branch  0 taken 11% (fallthrough)
+branch  1 taken 89%
+branch  2 taken 14% (fallthrough)
+branch  3 taken 86%
+       61:   74:    if (c == '{' && state == 2) state = 3;
+branch  0 taken 16% (fallthrough)
+branch  1 taken 84%
+branch  2 taken 10% (fallthrough)
+branch  3 taken 90%
+       61:   75:    if (c == ' '&& state == 3) state = 4;
+branch  0 taken 15% (fallthrough)
+branch  1 taken 85%
+branch  2 taken 11% (fallthrough)
+branch  3 taken 89%
+       61:   76:    if (c == 'a' && state == 4) state = 5;
+branch  0 taken 8% (fallthrough)
+branch  1 taken 92%
+branch  2 taken 20% (fallthrough)
+branch  3 taken 80%
+       61:   77:    if (c == 'x' && state == 5) state = 6;
+branch  0 taken 11% (fallthrough)
+branch  1 taken 89%
+branch  2 taken 14% (fallthrough)
+branch  3 taken 86%
+       61:   78:    if (c == '}' && state == 6) state = 7;
+branch  0 taken 10% (fallthrough)
+branch  1 taken 90%
+branch  2 taken 17% (fallthrough)
+branch  3 taken 83%
+       61:   79:    if (c == ')' && state == 7) state = 8;
+branch  0 taken 7% (fallthrough)
+branch  1 taken 93%
+branch  2 taken 25% (fallthrough)
+branch  3 taken 75%
+       61:   80:    if (c == ']' && state == 8) state = 9;
+branch  0 taken 13% (fallthrough)
+branch  1 taken 87%
+branch  2 taken 13% (fallthrough)
+branch  3 taken 88%
+       61:   81:    if (s[0] == 'r' && s[1] == 'e'
+branch  0 taken 56% (fallthrough)
+branch  1 taken 44%
+branch  2 taken 100% (fallthrough)
+branch  3 taken 0%
+       34:   82:       && s[2] == 's' && s[3] == 'e'
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+branch  2 taken 100% (fallthrough)
+branch  3 taken 0%
+       34:   83:       && s[4] == 't' && s[5] == '\0'
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+branch  2 taken 100% (fallthrough)
+branch  3 taken 0%
+       34:   84:       && state == 9)
+branch  0 taken 3% (fallthrough)
+branch  1 taken 97%
+        -:   85:    {
+        1:   86:      printf("error ");
+call    0 returned 100%
+        1:   87:      exit(200);
+call    0 returned 0%
+        -:   88:    }
+       60:   89:  }
+        -:   90:}
+        -:   91:
+        -:   92:
+function main called 1 returned 0% blocks executed 80%
+        1:   93:int main(int argc, char *argv[])
+        -:   94:{
+        1:   95:    srand(time(NULL));
+call    0 returned 100%
+call    1 returned 100%
+        1:   96:    testme();
+call    0 returned 0%
+    #####:   97:    return 0;
+        -:   98:}
