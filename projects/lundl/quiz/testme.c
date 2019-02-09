@@ -19,7 +19,7 @@ char inputChar()
 		'a', 'r', 'e', 's', 't'};
 	
 	// Randomly select a character from the valid pool by modding the random number
-	randIndex = randIndex % 9;	// random index
+	randIndex = randIndex % 14;	// random index
 	
 	// Return the character at this random index
     return characterPool[randIndex];
