@@ -76,6 +76,7 @@ int randomInt(int low, int high)
 		{
 			// make it smaller by modding it by our high range
 			newRandom = newRandom % high;
+			newRandom += 1;
 		}
 		else
 		{
@@ -83,7 +84,7 @@ int randomInt(int low, int high)
 			newRandom++;
 		}
 	}
-	
+
 	// Return this number that is in range
 	return newRandom;
 }
@@ -149,16 +150,16 @@ void fillKingdom(int* kingdomArr, int thisCard)
 ******************************************************************************/
 void setUpPlayer(struct gameState* state, int player, int* treasureCards)
 {
-	// get size of deck for this player
-	state->deckCount[player] = randomInt(0, MAX_DECK);
-	
-	// Get cards curse .. treasure_map for the deck
 	int i;
+	// get size of deck for this player
+	state->deckCount[player] = randomInt(2, MAX_DECK);
+
+	// Get cards curse .. treasure_map for the deck
 	for(i = 0; i < state->deckCount[player]; i++)
 	{
 		// fill deck with cards
 		int card = randomInt(curse, treasure_map);
-		
+	
 		// track how many treasure cards
 		if ((card == copper) || (card == silver) || (card == gold))
 		{
@@ -178,15 +179,30 @@ void setUpPlayer(struct gameState* state, int player, int* treasureCards)
 		state->hand[player][i] = randomInt(curse, treasure_map);
 	}
 	
-	// get size of discard for this player
-	state->discardCount[player] = randomInt(0, MAX_DECK);
-	
-	for(i = 0; i < state->discardCount[player]; i++)
+	// if treasureCards is 0, we don't want any treasure in discard either
+	if (treasureCards[player] == 0)
 	{
-		// fill discard with cards
-		state->discard[player][i] = randomInt(curse, treasure_map);
+		// get size of discard for this player
+		state->discardCount[player] = randomInt(0, MAX_DECK);
+		
+		for(i = 0; i < state->discardCount[player]; i++)
+		{
+			// fill discard with cards no in range of treasure
+			state->discard[player][i] = randomInt(council_room, treasure_map);
+		}
 	}
-	
+	else
+	{
+		// get size of discard for this player
+		state->discardCount[player] = randomInt(0, MAX_DECK);
+		
+		for(i = 0; i < state->discardCount[player]; i++)
+		{
+			// fill discard with cards
+			state->discard[player][i] = randomInt(curse, treasure_map);
+		}
+	}
+		
 }
 
 /******************************************************************************
@@ -245,6 +261,8 @@ int main()
 	int i;
     int seed = 1000; // needed for game initialization
 	time_t thisTime;
+	int keepTesting = 1; // this is a boolean to track test conditions
+	int testCondition = 0; // this is a counter for which conditions we've tested
 	
 	// Seed random number generator for randomInt 
 	srand((unsigned) time(&thisTime));
@@ -260,8 +278,8 @@ int main()
 	
 	printf("---------- Randomly Testing Card: %s ----------\n", TESTCARD);
 	
-	// Run tests for number spec
-	while(testCount <= maxTest)
+	// Run tests until these conditions are tested
+	while(keepTesting)
 	{
 		/* set up test case */
 		fillKingdom(&k[0], adventurer);
@@ -274,10 +292,14 @@ int main()
 		originalGame.numPlayers = numPlayers;
     
 		// Set the current player
-		thisPlayer = randomInt(0, numPlayers);
+		thisPlayer = randomInt(0, numPlayers - 1);
 		originalGame.whoseTurn = thisPlayer;
 	
 		// Set up decks, hands, and discard for all players
+		for(i = 0; i < numPlayers; i++)
+		{
+			treasureCards[i] = 0;
+		}
 		for (i = 0; i < numPlayers; i++)
 		{
 			// call function to set up player
@@ -288,7 +310,14 @@ int main()
 		setPlayedCards(&originalGame);
 		
 		// Put target card in hand of this player
-		handPos = randomInt(0, originalGame.handCount[thisPlayer] - 1);
+		if(originalGame.handCount[thisPlayer] > 1)
+		{
+			handPos = randomInt(0, originalGame.handCount[thisPlayer] - 1);
+		}
+		else
+		{
+			handPos = 0;
+		}
 		
 		// replaces whatever was there
 		originalGame.hand[thisPlayer][handPos] = adventurer; 
@@ -308,6 +337,26 @@ int main()
 			
 		// Copy game into test
 		memcpy(&testGame, &originalGame, sizeof(struct gameState));
+		
+		
+		if((testCondition == 0) && (treasureCards[thisPlayer] == 0))
+		{
+			testCondition += 1;
+		}
+		if((testCondition == 1) && (originalGame.numPlayers == 2))
+		{
+			testCondition += 1;
+		}
+		if((testCondition == 2) && (originalGame.numPlayers == 3))
+		{
+			testCondition += 1;
+		}
+		if((testCondition == 3) && (originalGame.numPlayers == MAX_PLAYERS))
+		{
+			testCondition += 1;
+			keepTesting = 0; // This is our last test
+		}
+		
 		
 		// Execute call to cardEffect
 		cardEffect(adventurer, choice1, choice2, choice3, &testGame, handPos, &bonus);
