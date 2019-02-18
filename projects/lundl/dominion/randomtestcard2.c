@@ -1,9 +1,9 @@
 /******************************************************************************
  * Author: Laura Lund, lundl@oregonstate.edu
  * Assignment: CS 362 Winter 2019, Assignment 4
- * Description: This is a random tester for the card adventurer in dominion.c.
+ * Description: This is a random tester for the card salvager in dominion.c.
  * Citations: The example given in Assignment 3: cardtest4.c
- * 	My cardtest2.c file from Assignment 3
+ * 	My cardtest4.c file from Assignment 3
  * ***************************************************************************/
 #include "dominion.h"
 #include "dominion_helpers.h" 
@@ -15,7 +15,7 @@
 #include <string.h>
 
 
-#define TESTCARD "adventurer"
+#define TESTCARD "salvager"
 /******************************************************************************
  * Name: printResults
  * Parameters: a char* holding a string to be printed, an int holding a test
@@ -29,11 +29,11 @@ void printResults(char* testCase, int assertResult)
 {
     if(assertResult == 0)
     {
-	printf("   --adventurer: FAIL %s\n", testCase);
+	printf("   --salvager: FAIL %s\n", testCase);
     }
     else
     {
-	printf("   --adventurer: PASS %s\n", testCase);
+	printf("   --salvager: PASS %s\n", testCase);
     }
 }
 
@@ -143,13 +143,12 @@ void fillKingdom(int* kingdomArr, int thisCard)
 }
 
 /******************************************************************************
-* Parameters: gameStruct*, int specifying player, array of ints for treasure
-*	count for each player
+* Parameters: gameStruct*, int specifying player
 * Description: this sets up a player's deck, deckCount, hand, handCount, 
 *	discard, and discardCount
 * Return Value: none
 ******************************************************************************/
-void setUpPlayer(struct gameState* state, int player, int* treasureCards)
+void setUpPlayer(struct gameState* state, int player)
 {
 	int i;
 	// get size of deck for this player
@@ -160,18 +159,12 @@ void setUpPlayer(struct gameState* state, int player, int* treasureCards)
 	{
 		// fill deck with cards
 		int card = randomInt(curse, treasure_map);
-	
-		// track how many treasure cards
-		if ((card == copper) || (card == silver) || (card == gold))
-		{
-			treasureCards[player]++;
-		}
 		state->deck[player][i] = card;
 	}
 	
-	// get size of hand for this player (always has at least 1 card so can 
-	// hold target card for test)
-	state->handCount[player] = randomInt(1, MAX_HAND);
+	// get size of hand for this player (always has at least 2 cards so can 
+	// hold target card for test and have one to trash)
+	state->handCount[player] = randomInt(2, MAX_HAND);
 	
 	// Get cards curse .. treasure_map for the hand
 	for(i = 0; i < state->handCount[player]; i++)
@@ -180,28 +173,14 @@ void setUpPlayer(struct gameState* state, int player, int* treasureCards)
 		state->hand[player][i] = randomInt(curse, treasure_map);
 	}
 	
-	// if treasureCards is 0, we don't want any treasure in discard either
-	if (treasureCards[player] == 0)
-	{
-		// get size of discard for this player
-		state->discardCount[player] = randomInt(0, MAX_DECK);
+
+	// get size of discard for this player
+	state->discardCount[player] = randomInt(0, MAX_DECK);
 		
-		for(i = 0; i < state->discardCount[player]; i++)
-		{
-			// fill discard with cards no in range of treasure
-			state->discard[player][i] = randomInt(council_room, treasure_map);
-		}
-	}
-	else
+	for(i = 0; i < state->discardCount[player]; i++)
 	{
-		// get size of discard for this player
-		state->discardCount[player] = randomInt(0, MAX_DECK);
-		
-		for(i = 0; i < state->discardCount[player]; i++)
-		{
-			// fill discard with cards
-			state->discard[player][i] = randomInt(curse, treasure_map);
-		}
+		// fill discard with cards
+		state->discard[player][i] = randomInt(curse, treasure_map);
 	}
 		
 }
@@ -231,19 +210,19 @@ void setPlayedCards(struct gameState* state)
 ******************************************************************************/
 int main()
 {
-    int newCards = 2; // adventurer should return 2 new treasure cards
-	int treasureCardsHand = 0; // update with actual treasure cards in hand
+    int newCards = 0; // salvager should return 1 new card
 	int handCountComparison = 0; // 1 if handcount matches expected value
-	int discarded = 1; // the card played will be discarded
-	int deckCountComparision = 0; // 1 if deckCount matches expected value
-    
+	int discarded = 2; // the card played will be discarded, choice will be trashed
+	int buyIncrease = 1; // salvager should increase the buys by 1
+    int playedCountComparison = 0; // 1 if played count matches expected value
+	int coinCountComp = 0; // 1 if coin count matches expected value
+	int buyComp = 0; // 1 if buy count matches expected value
+	int deckCountComparison = 0; // 1 if deckcount matches expected value
+	
+	
 	int numPlayers; // value randomly assigned
 	int thisPlayer; // value randomly assigned
 	int handPos; // value randomly assigned
-	
-	// will hold number of treasure cards in play for each player
-	int treasureCards[MAX_PLAYERS] = {0}; 
-	
 	
 	int otherPlayerHandMatch = 1; // 0 if player's hand changes 
 	int otherPlayerDeckMatch = 1; // 0 if player's deck changes
@@ -258,6 +237,8 @@ int main()
     int testCount = 1; // this will be incremented
 
 	int choice1 = 0, choice2 = 0, choice3 = 0, bonus = 0;
+	int choiceVal = 0;
+	
 	int i;
     int seed = 1000; // needed for game initialization
 	time_t thisTime;
@@ -273,7 +254,7 @@ int main()
 	// Kingdom cards in play
 	int k[10];
 	
-	// This the the state of the game that will be sent to adventurer
+	// This the the state of the game that will be sent to salvager
     struct gameState testGame;
 	
 	// This is the state of the game that will be used to preserve the original state
@@ -285,7 +266,7 @@ int main()
 	while(keepTesting)
 	{
 		/* set up test case */
-		fillKingdom(&k[0], adventurer);
+		fillKingdom(&k[0], salvager);
 
 		// initialize game state and player cards
 		initializeGame(numPlayers, k, seed, &originalGame); 
@@ -299,14 +280,10 @@ int main()
 		originalGame.whoseTurn = thisPlayer;
 	
 		// Set up decks, hands, and discard for all players
-		for(i = 0; i < numPlayers; i++)
-		{
-			treasureCards[i] = 0;
-		}
 		for (i = 0; i < numPlayers; i++)
 		{
 			// call function to set up player
-			setUpPlayer(&originalGame, i, &treasureCards[0]);
+			setUpPlayer(&originalGame, i);
 		}
 		
 		// Set played cards
@@ -323,8 +300,24 @@ int main()
 		}
 		
 		// replaces whatever was there
-		originalGame.hand[thisPlayer][handPos] = adventurer; 
-
+		originalGame.hand[thisPlayer][handPos] = salvager; 
+		
+		// Select a card from the hand as the "choice" card
+		choice1 = randomInt(0, originalGame.handCount[thisPlayer] - 1);
+		
+		// can't choose salvager card
+		while (choice1 == handPos)
+		{
+			// get a new position for choice card to trash
+			choice1 = randomInt(0, originalGame.handCount[thisPlayer] - 1);
+		}
+		
+		// Get the value of this card
+		choiceVal = getCost(originalGame.hand[thisPlayer][choice1]);
+		
+		// get random coin amount
+		originalGame.coins = randomInt(0, 50);
+		
 		// Print test count, details about this test
 		printf("\n  -----Test %i-----\n", testCount);
 		
@@ -333,106 +326,147 @@ int main()
 			originalGame.numPlayers, originalGame.whoseTurn);
 		
 		// Details about current player
-		printf("   Current Player's Deck Count: %i, Treasure Cards in Deck: %i\n", 
-			originalGame.deckCount[thisPlayer], treasureCards[thisPlayer]);
-		printf("   Current Player's Hand Count: %i, Adventurer Position: %i\n",
+		printf("   Current Player's Deck Count: %i, Choice Position: %i\n", 
+			originalGame.deckCount[thisPlayer], choice1);
+		printf("   Current Player's Hand Count: %i, salvager Position: %i\n",
 			originalGame.handCount[thisPlayer], handPos);
+		printf("   Current Coin Count: %i, choice card's value: %i\n",
+			originalGame.coins, originalGame.hand[thisPlayer][choice1]);
+
 			
 		// Copy game into test
 		memcpy(&testGame, &originalGame, sizeof(struct gameState));
 		
 		
-		if((testCondition == 0) && (treasureCards[thisPlayer] == 0))
+		if((testCondition == 0) && (originalGame.numPlayers == 2))
 		{
 			testCondition += 1;
 		}
-		if((testCondition == 1) && (originalGame.numPlayers == 2))
+		if((testCondition == 1) && (originalGame.numPlayers == 3))
 		{
 			testCondition += 1;
 		}
-		if((testCondition == 2) && (originalGame.numPlayers == 3))
+		if((testCondition == 2) && (originalGame.numPlayers == MAX_PLAYERS))
 		{
 			testCondition += 1;
 		}
-		if((testCondition == 3) && (originalGame.numPlayers == MAX_PLAYERS))
+		if((testCondition == 3) && (choiceVal == 0))
+		{
+			testCondition += 1;
+		}
+		if((testCondition == 4) && (choiceVal == 2))
+		{
+			testCondition += 1;
+		}
+		if((testCondition == 5) && (choiceVal == 5))
+		{
+			testCondition += 1;
+		}
+		if((testCondition == 4) && (choiceVal == 6))
+		{
+			testCondition += 1;
+		}
+		if((testCondition == 5) && (choiceVal == 3))
+		{
+			testCondition += 1;
+		}
+		if((testCondition == 6) && (choiceVal == 4))
+		{
+			testCondition += 1;
+		}
+		if((testCondition == 7) && (choiceVal == 8))
+		{
+			testCondition += 1;
+		}
+		if((testCondition == 8) && (choice1 == 0))
 		{
 			testCondition += 1;
 			keepTesting = 0; // This is our last test
 		}
 		
-		
 		// Execute call to cardEffect
-		cardEffect(adventurer, choice1, choice2, choice3, &testGame, handPos, &bonus);
+		cardEffect(salvager, choice1, choice2, choice3, &testGame, handPos, &bonus);
 		
-		/* Check Results */
-		// hand count should be 2 - 1 more than original hand count
+		/* Check Results */		
+		
+		// hand count should be -2 of original hand count
 		// assert that the above is true
 		handCountComparison = assertTrue(testGame.handCount[thisPlayer], 
-			originalGame.handCount[thisPlayer] + newCards - discarded);
-			
+		originalGame.handCount[thisPlayer] + newCards - discarded);
+		
 		// Print result
-		printResults("+1 cards in hand count", handCountComparison);
+		printResults("-2 cards in hand count", handCountComparison);
 		if(handCountComparison == 0)
 		{
 			printf("        hand count: %i, expected: %i\n", 
 				testGame.handCount[thisPlayer], originalGame.handCount[thisPlayer] 
 				+ newCards - discarded);	
 		}
+
+		// coin count should increase by cost of choice card
+		// assert that the above is true
+		coinCountComp = assertTrue(testGame.coins, originalGame.coins + choiceVal);
 		
-		// deck count should be <= original deck count - 2
+		printResults("+cost of choice card added to coin count", coinCountComp);
+		if(coinCountComp == 0)
+		{
+			printf("        coin count: %i, expected: %i\n", testGame.coins, 
+				originalGame.coins + choiceVal);
+		}
+		
+		// buys should increase by 1
+		buyComp = assertTrue(testGame.numBuys, originalGame.numBuys + buyIncrease);
+		
+		// print results
+		printResults("+1 buy count", buyComp);
+		if(buyComp == 0)
+		{
+			printf("     buy count: %i, expected: %i\n", testGame.numBuys, 
+				originalGame.numBuys + buyIncrease);    
+		}
+		
+		
+		// played count should be 1 more than original played count
+		// assert that the above is true
+		playedCountComparison = assertTrue(testGame.playedCardCount, 
+			originalGame.playedCardCount + 1);
+			
+	
+		// print result
+		printResults("+1 played card", playedCountComparison);
+		if(playedCountComparison == 0)
+		{
+			printf("     played card count: %i, expected: %i\n", testGame.playedCardCount, 
+				originalGame.playedCardCount + 1);	
+		}
+		
+		// deck count should be <= original deck count - 1
 		if(testGame.deckCount[thisPlayer] <=
 			originalGame.deckCount[thisPlayer] - newCards)
 		{
 			// assert that the above is true
-			deckCountComparision = 1;
+			deckCountComparison = 1;
 		}
 		
 		// print result
-		printResults("deck count reduced by 2 or more cards", deckCountComparision);
-		if(deckCountComparision == 0)
+		printResults("deck count reduced by 1 card", deckCountComparison);
+		if(deckCountComparison == 0)
 		{
 			printf("        deck count: %i, expected: <=%i\n", 
 				testGame.deckCount[thisPlayer], originalGame.deckCount[thisPlayer] 
 				- newCards);	
 		}
 		
-		// Count the new treasure cards in this player's handfor (i=0; i < originalGame.handCount[1]; i++)
-		treasureCardsHand = 0;	
-		for(i=0; i < testGame.handCount[thisPlayer]; i++)
-		{
-			// compare hands
-			if(originalGame.hand[thisPlayer][i] != testGame.hand[thisPlayer][i])
-			{
-				// this is a new card
-				// if it is a treasure card
-				if((testGame.hand[thisPlayer][i] == copper) ||
-				(testGame.hand[thisPlayer][i] == silver) ||
-				(testGame.hand[thisPlayer][i] == gold))
-				{
-					// increment the count
-					treasureCardsHand++;
-				}
-			}
-		}
-		
-		// New cards that are treasure cards should be exactly 2
-		printResults("+2 treasure cards", assertTrue(treasureCardsHand, 2));
-		
-		if(!assertTrue(treasureCardsHand, 2))
-		{
-			printf("        new treasure card count: %i, expected: 2\n", treasureCardsHand);
-		}
-		
-		// adventurer should no longer be in this player's hand at handPos
-		if(testGame.hand[thisPlayer][handPos] == adventurer)
+		// salvager should no longer be in this player's hand at handPos
+		if(testGame.hand[thisPlayer][handPos] == salvager)
 		{
 			// print result
-			printResults("adventurer not in hand", 0);
+			printResults("salvager not in hand", 0);
 		}
 		else
 		{
 			// print result
-			printResults("adventurer not in hand", 1);
+			printResults("salvager not in hand", 1);
 		}
 		
 		// Check states of other players
