@@ -1293,7 +1293,7 @@ int main()
 	printf("\n-----Test 8: hand count of 5, adventurer in pos 4, 4 players-----\n");
 	printf("-----Deck holds 2 gold-----\n");
 	
-	// reinitialize game for 3 players
+	// reinitialize game for 4 players
 	numPlayers = 4;
 	initializeGame(numPlayers, k, seed, &originalGame); 
 	
@@ -1531,11 +1531,11 @@ int main()
 	
 	printResults("victory cards unchanged", victoryComp);
 	
-	// ----- Test 9: hand count of 5, adventurer in pos 4, 2 players -----
+	// ----- Test 9: hand count of 5, adventurer in pos 4, 4 players -----
 	printf("\n-----Test 9: hand count of 5, adventurer in pos 4, 4 players-----\n");
 	printf("-----Deck holds 2 estate (no treasure)-----\n");
 	
-	// reinitialize game for 3 players
+	// reinitialize game for 4 players
 	numPlayers = 4;
 	initializeGame(numPlayers, k, seed, &originalGame); 
 	
@@ -1772,7 +1772,7 @@ int main()
 	
 	printResults("victory cards unchanged", victoryComp);
 	
-	printf("---------- Testing for %s complete. ----------\n", TESTCARD);
+	printf("---------- Testing for %s complete. ----------\n\n", TESTCARD);
 	
 	return 0;
 }
