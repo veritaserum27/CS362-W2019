@@ -261,7 +261,7 @@ void testIsGameOver()
 	testGame->supplyCount[i] = 25;
     }
 
-    testGame->supplyCount[province] = -1;
+    testGame->supplyCount[province] = 0;
 
     printf("\nisGameOver() Test Case 8\n");
 
@@ -269,7 +269,7 @@ void testIsGameOver()
     returnVal = isGameOver(testGame);
 
     // Check the restults of this test case
-    char* testCase8 = "provice count -1, all other cards have count 25";
+    char* testCase8 = "provice count 0, all other cards have count 25";
 
     // Assert that the returnval is 1
     if(assertTrue(0, 0, returnVal, 1))
@@ -290,9 +290,9 @@ void testIsGameOver()
 	testGame->supplyCount[i] = 25;
     }
 
-    testGame->supplyCount[village] = -1;
-    testGame->supplyCount[treasure_map] = -1;
-    testGame->supplyCount[mine] = -1;
+    testGame->supplyCount[village] = 0;
+    testGame->supplyCount[treasure_map] = 0;
+    testGame->supplyCount[mine] = 0;
 
 
     printf("\nisGameOver() Test Case 9\n");
@@ -301,7 +301,7 @@ void testIsGameOver()
     returnVal = isGameOver(testGame);
 
     // Check the restults of this test case
-    char* testCase9 = "three cards have count -1, all other cards have count 25";
+    char* testCase9 = "three cards have count 0, all other cards have count 25";
 
     // Assert that the returnval is 1
     if(assertTrue(0, 0, returnVal, 1))

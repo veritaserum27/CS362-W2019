@@ -313,7 +313,8 @@ int main()
 		}
 		
 		// Get the value of this card
-		choiceVal = getCost(originalGame.hand[thisPlayer][choice1]);
+		int choiceCard = originalGame.hand[thisPlayer][choice1];
+		choiceVal = getCost(choiceCard);
 		
 		// get random coin amount
 		originalGame.coins = randomInt(0, 50);
@@ -331,7 +332,7 @@ int main()
 		printf("   Current Player's Hand Count: %i, salvager Position: %i\n",
 			originalGame.handCount[thisPlayer], handPos);
 		printf("   Current Coin Count: %i, choice card's value: %i\n",
-			originalGame.coins, originalGame.hand[thisPlayer][choice1]);
+			originalGame.coins, choiceVal);
 
 			
 		// Copy game into test

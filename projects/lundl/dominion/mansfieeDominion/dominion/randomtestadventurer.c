@@ -365,13 +365,40 @@ int main()
 		cardEffect(adventurer, choice1, choice2, choice3, &testGame, handPos, &bonus);
 		
 		/* Check Results */
-		// hand count should be 2 - 1 more than original hand count
+		if(treasureCards[thisPlayer] == 0)
+		{
+			newCards = 0;
+		}
+		else if(treasureCards[thisPlayer] == 1)
+		{
+			newCards = 1;
+		}
+		else
+		{
+			newCards = 2;
+		}
+		
+		
+		// hand count should be newCards - 1 more than original hand count
 		// assert that the above is true
 		handCountComparison = assertTrue(testGame.handCount[thisPlayer], 
 			originalGame.handCount[thisPlayer] + newCards - discarded);
 			
 		// Print result
-		printResults("+1 cards in hand count", handCountComparison);
+		if(treasureCards[thisPlayer] == 0)
+		{
+			printResults("-1 cards in hand count", handCountComparison);
+		}
+		else if(treasureCards[thisPlayer] == 1)
+		{
+			printResults("+0 cards in hand count", handCountComparison);
+		}
+		else
+		{
+			printResults("+1 cards in hand count", handCountComparison);
+		}
+		
+		
 		if(handCountComparison == 0)
 		{
 			printf("        hand count: %i, expected: %i\n", 
@@ -379,7 +406,7 @@ int main()
 				+ newCards - discarded);	
 		}
 		
-		// deck count should be <= original deck count - 2
+		// deck count should be <= original deck count - new cards
 		if(testGame.deckCount[thisPlayer] <=
 			originalGame.deckCount[thisPlayer] - newCards)
 		{
@@ -387,8 +414,22 @@ int main()
 			deckCountComparision = 1;
 		}
 		
-		// print result
-		printResults("deck count reduced by 2 or more cards", deckCountComparision);
+		//Deck count 
+		if(treasureCards[thisPlayer] == 0)
+		{
+			printResults("deck count reduced by 0 or more cards", deckCountComparision);
+		}
+		else if(treasureCards[thisPlayer] == 1)
+		{
+			printResults("deck count reduced by 1 or more cards", deckCountComparision);
+		}
+		
+		else
+		{
+			printResults("deck count reduced by 2 or more cards", deckCountComparision);
+		}
+
+		
 		if(deckCountComparision == 0)
 		{
 			printf("        deck count: %i, expected: <=%i\n", 
@@ -415,12 +456,24 @@ int main()
 			}
 		}
 		
-		// New cards that are treasure cards should be exactly 2
-		printResults("+2 treasure cards", assertTrue(treasureCardsHand, 2));
-		
-		if(!assertTrue(treasureCardsHand, 2))
+		// New cards that are treasure cards should be exactly the number of new cards
+		if(treasureCards[thisPlayer] == 0)
 		{
-			printf("        new treasure card count: %i, expected: 2\n", treasureCardsHand);
+			printResults("+0 treasure cards", assertTrue(treasureCardsHand, newCards));
+		}
+		else if(treasureCards[thisPlayer] == 1)
+		{
+			printResults("+1 treasure cards", assertTrue(treasureCardsHand, newCards));
+		}
+		
+		else
+		{
+			printResults("+2 treasure cards", assertTrue(treasureCardsHand, newCards));
+		}
+		
+		if(!assertTrue(treasureCardsHand, newCards))
+		{
+			printf("        new treasure card count: %i, expected: %i\n", treasureCardsHand, newCards);
 		}
 		
 		// adventurer should no longer be in this player's hand at handPos

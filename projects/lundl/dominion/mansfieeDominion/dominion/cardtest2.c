@@ -1550,35 +1550,35 @@ int main()
 	cardEffect(adventurer, choice1, choice2, choice3, &testGame, handPos, &bonus);
 	
 	
-	// hand count should be 2 - 1 more than original hand count
+	// hand count should be 0 - 1 more than original hand count
 	// assert that the above is true
 	handCountComparison = assertTrue(testGame.handCount[thisPlayer], 
-		originalGame.handCount[thisPlayer] + newCards - discarded);
+		originalGame.handCount[thisPlayer] + 0 - discarded);
 		
 	// Print result
-	printResults("+1 cards in hand count", handCountComparison);
+	printResults("-1 cards in hand count", handCountComparison);
 	if(handCountComparison == 0)
 	{
 		printf("        hand count: %i, expected: %i\n", 
 			testGame.handCount[thisPlayer], originalGame.handCount[thisPlayer] 
-			+ newCards - discarded);	
+			+ 0 - discarded);	
 	}
 	
-	// deck count should be <= original deck count - 2
+	// deck count should be <= original deck count
 	if(testGame.deckCount[thisPlayer] <=
-		originalGame.deckCount[thisPlayer] - newCards)
+		originalGame.deckCount[thisPlayer])
 	{
 		// assert that the above is true
 		deckCountComparision = 1;
 	}
 	
 	// print result
-	printResults("deck count reduced by 2 or more cards", deckCountComparision);
+	printResults("deck count reduced by 0 or more cards", deckCountComparision);
 	if(deckCountComparision == 0)
 	{
 		printf("        deck count: %i, expected: <=%i\n", 
 			testGame.deckCount[thisPlayer], originalGame.deckCount[thisPlayer] 
-			- newCards);	
+			- 0);	
 	}
 	
 	// Count the new treasure cards in this player's handfor (i=0; i < originalGame.handCount[1]; i++)
@@ -1600,12 +1600,12 @@ int main()
 		}
 	}
 	
-	// New cards that are treasure cards should be exactly 2
-	printResults("+2 treasure cards", assertTrue(treasureCardsHand, 2));
+	// New cards that are treasure cards should be 0 because there are no treasure cards in the deck.
+	printResults("+0 treasure cards", assertTrue(treasureCardsHand, 0));
 	
-	if(!assertTrue(treasureCardsHand, 2))
+	if(!assertTrue(treasureCardsHand, 0))
 	{
-		printf("        new treasure card count: %i, expected: 2\n", treasureCardsHand);
+		printf("        new treasure card count: %i, expected: 0\n", treasureCardsHand);
 	}
 	
 	// The states of other players should not change. 
