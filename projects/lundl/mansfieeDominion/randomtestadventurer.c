@@ -176,8 +176,8 @@ void setUpPlayer(struct gameState* state, int player, int* treasureCards)
 	// Get cards curse .. treasure_map for the hand
 	for(i = 0; i < state->handCount[player]; i++)
 	{
-		// fill hand with cards
-		state->hand[player][i] = randomInt(curse, treasure_map);
+		// fill hand with cards (no treasure)
+		state->hand[player][i] = randomInt(council_room, treasure_map);
 	}
 	
 	// if treasureCards is 0, we don't want any treasure in discard either
@@ -200,7 +200,7 @@ void setUpPlayer(struct gameState* state, int player, int* treasureCards)
 		for(i = 0; i < state->discardCount[player]; i++)
 		{
 			// fill discard with cards
-			state->discard[player][i] = randomInt(curse, treasure_map);
+			state->discard[player][i] = randomInt(council_room, treasure_map);
 		}
 	}
 		

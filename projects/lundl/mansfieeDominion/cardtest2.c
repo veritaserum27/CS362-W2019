@@ -1553,10 +1553,11 @@ int main()
 	originalGame.hand[thisPlayer][handPos] = adventurer;
 
 	
-    // Set deck to hold 2 estate
+    // Set deck to hold 3 estate
 	originalGame.deck[thisPlayer][0] = estate;
 	originalGame.deck[thisPlayer][1] = estate;
-	originalGame.deckCount[thisPlayer] = 2;
+	originalGame.deck[thisPlayer][2] = estate;
+	originalGame.deckCount[thisPlayer] = 3;
 	
 	// Copy game into test
 	memcpy(&testGame, &originalGame, sizeof(struct gameState));

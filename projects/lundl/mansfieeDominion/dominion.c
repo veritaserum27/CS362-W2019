@@ -399,7 +399,9 @@ int isGameOver(struct gameState *state) {
 
   //if three supply pile are at 0, the game ends
   j = 0;
-  for (i = 0; i < 25; i++)
+  // BUG Found by Laura Lund: does not check treasure_map supply count
+//  for (i = 0; i < 25; i++)
+  for(i = curse; i <= treasure_map; i++)
     {
       if (state->supplyCount[i] == 0)
 	{
@@ -643,21 +645,30 @@ int getCost(int cardNumber)
   return -1;
 }
 
-int adventurerCase(int drawntreasure, struct gameState *state, int currentPlayer, int temphand[], int z){
-    while(drawntreasure<2){
+int adventurerCase(int drawntreasure, struct gameState *state, int currentPlayer, int handPos, int temphand[], int z){
+    // BUG Found by Laura Lund: missing discard from hand
+	//discard card from hand`
+	discardCard(handPos, currentPlayer, state, 0);	
+	
+	while((drawntreasure<2) && (z < state->handCount[currentPlayer])){
 		if (state->deckCount[currentPlayer] <1){//if the deck is empty we need to shuffle discard and add to deck
 		  shuffle(currentPlayer, state);
 		}
+		//printf("Before Draw Card z: %i, handCount: %i\n", z, state->handCount[currentPlayer]);
 		drawCard(currentPlayer, state);
 		int cardDrawn = state->hand[currentPlayer][state->handCount[currentPlayer]-1];//top card of hand is most recently drawn card.
-		if (cardDrawn == copper || cardDrawn == silver || cardDrawn == gold)
+		if (cardDrawn == copper || cardDrawn == silver || cardDrawn == gold) {
 		  drawntreasure++;
-		else{
+		//  printf("Found Treasure z: %i, handCount: %i\n", z, state->handCount[currentPlayer]);
+		}
+		else {
 		  temphand[z]=cardDrawn;
 		  state->handCount[currentPlayer]--; //this should just remove the top card (the most recently drawn one).
 		  z++;
+		//  printf("Not Treasure z: %i, handCount: %i\n", z, state->handCount[currentPlayer]);
 		}
 	}
+	//printf("After Draw Card z: %i, handCount: %i\n", z, state->handCount[currentPlayer]);
 	while(!z-1>=0){
 		state->discard[currentPlayer][state->discardCount[currentPlayer]++]=temphand[z-1]; // discard all cards in play that have been drawn
 		z=z-1;
@@ -847,7 +858,7 @@ int cardEffect(int card, int choice1, int choice2, int choice3, struct gameState
   switch( card ) 
     {
     case adventurer:
-      adventurerCase(drawntreasure, state, currentPlayer, temphand, z);
+      adventurerCase(drawntreasure, state, currentPlayer, handPos, temphand, z);
       return 0;
 			
     case council_room:
@@ -1193,19 +1204,27 @@ int cardEffect(int card, int choice1, int choice2, int choice3, struct gameState
       return 0;
 		
     case salvager:
+	
+	// BUG Found by Laura Lund: moved discard of salvager to before card effect
+	//discard card
+      discardCard(handPos, currentPlayer, state, 0);
+	
+	
       //+1 buy
       state->numBuys++;
 			
-      if (choice1)
-	{
-	  //gain coins equal to trashed card
-	  state->coins = state->coins + getCost( handCard(choice1, state) );
-	  //trash card
-	  discardCard(choice1, currentPlayer, state, 1);	
-	}
+	// BUG Found by Laura Lund: when choice1 is 0, still execute effect
+	//if(choice1)
+      if ((choice1 >= 0) && (choice1 < state->handCount[currentPlayer]))
+	  {
+		  //gain coins equal to trashed card
+		  state->coins = state->coins + getCost( handCard(choice1, state) );
+		  //trash card
+		  discardCard(choice1, currentPlayer, state, 1);	
+	  }
 			
       //discard card
-      discardCard(handPos, currentPlayer, state, 0);
+      //discardCard(handPos, currentPlayer, state, 0);
       return 0;
 		
     case sea_hag:

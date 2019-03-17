@@ -294,7 +294,6 @@ void testIsGameOver()
     testGame->supplyCount[treasure_map] = 0;
     testGame->supplyCount[mine] = 0;
 
-
     printf("\nisGameOver() Test Case 9\n");
 
     // Pass this gameState struct to isGameOver()
